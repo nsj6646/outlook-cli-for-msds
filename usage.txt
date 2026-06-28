@@ -1,0 +1,23 @@
+[Outlook Bulk MSDS Delivery CLI - 간편 사용 설명서]
+
+본 프로그램은 엑셀 데이터 소스를 읽고 지정된 폴더 내의 MSDS 파일을 매칭하여 아웃룩으로 메일을 일괄 작성/발송하는 도구입니다.
+
+1. 필수 파일 및 폴더 구조
+  - 엑셀 파일 내 2개 시트 필수:
+    * 'Recipients' 시트: To(수신), Cc(참조, ;구분), Subject(제목), Body(본문), From(발신계정), 예약시간(YYYY-MM-DD HH:MM:SS)
+    * 'TableData' 시트: Email(매핑키), 번호, 제품코드, 제품명
+  - MSDS 파일 보관 폴더: 파일명의 맨 첫부분이 "제품코드_" 형태로 시작해야 매칭되어 자동 첨부됩니다.
+
+2. 대표 실행 명령어 예시
+  - 아웃룩 임시 보관함에 초안으로 안전하게 일괄 저장 (권장, 화면 방해 없음):
+    > outlook-cli.exe --excel 명단.xlsx --msds-dir ./msds폴더 --draft --non-interactive
+
+  - 초안 작성 후 화면에 메일창 띄우기 (직접 검수용):
+    > outlook-cli.exe --excel 명단.xlsx --msds-dir ./msds폴더 --draft
+
+  - 즉시 발송 모드 (실제 수신처로 바로 메일 송신):
+    > outlook-cli.exe --excel 명단.xlsx --msds-dir ./msds폴더
+
+3. 주의 사항
+  - 예약 발송이 설정된 메일들은 발송 버튼을 누르면 '보낼 편지함'으로 이동합니다. 아웃룩 프로그램이 켜져 있어야 지정한 시간에 발송됩니다.
+  - 실행 시마다 'logs' 폴더에 상세 실행 이력(감사 로그)이 저장되며, 7일이 지난 구버전 로그 파일들은 자동 청소됩니다.
