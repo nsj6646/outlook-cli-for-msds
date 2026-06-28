@@ -1,0 +1,401 @@
+Delivered-To: nsj6646@gmail.com
+Received: by 2002:a05:7022:fe0b:b0:139:d6e7:2d54 with SMTP id vc11csp2694176dlb;
+        Sun, 28 Jun 2026 07:52:38 -0700 (PDT)
+X-Received: by 2002:a05:620a:6008:b0:92b:67e6:8ab2 with SMTP id af79cd13be357-92b67e68c74mr998561085a.60.1782658358356;
+        Sun, 28 Jun 2026 07:52:38 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1782658358; cv=fail;
+        d=google.com; s=arc-20260327;
+        b=m1jkOC6l+dy8C+uu/5TLSMbztGqGkN0Zr6YQaYBK31gM+u1s3zBbAtyPHoc5CIhgqC
+         4ZjqRSgeA7vYkSLWuQUJGNgdv3d+qhfAVkxpP/MfwxvA9RjMUAZe9HcU+m7Oh870+YCO
+         HC4FT8CGyH7JIvp8iKz7L58t5wUb/SHk6BesJTzjq2Xwxl/C/1vSbgWEUrfoa4/psAzt
+         1IRH4+SkHs3g1UfzFNdy2A2pJD0bLSCPFbuPjR1X2RZoNubYQXlfVLDeSdAtTRnzzqEv
+         bCzQ7R3BRdeKPHBRUh5pCHgEFV/ePJxSENxy5aS7jQvPE1Yf3DxfJ2iK+ZBSswo1b0rc
+         jl+w==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20260327;
+        h=dkim-signature:mime-version:content-language:accept-language
+         :message-id:date:thread-index:thread-topic:subject:to:from;
+        bh=KbRf0ac8E6MQh7zmnQHnkLx36z/2K0InxoaQOKc0Ww4=;
+        fh=/WwopeNaYfANKUFdxFuRPoAANors5eDWXSwE1WdlqRQ=;
+        b=edgAtbeWlAEFrmn+BAE2ATIlDSrgag/76JcrTIb0bUD5IvTepmdTUIHCmJlqfrvTvx
+         SHobbfUUH3kheQp/z7RGTRgBk9Dwpy1g9z5UlJrV5a/y9EGZUNqk00MAFiHCsmdXKyOt
+         J2t95bgPUj6TmmHklQvTv67BBupql3m0+rMjnLiq3y7/Ss0BVrodKrJfOjTFkaBiSqSE
+         ug9Mzseebxb5G6zOA9p7jm0eLRsCLe0bmf9J++FU64hJ18KgXjFIdQ4QHmuvXW6eWD8J
+         ji5k6eUqfjmfONPQne+/QZZ5rWnedksXB7fIXen8Sh8vjyBInFHhU7+ZTNHSqY2Rw3oB
+         EiKA==;
+        dara=google.com
+ARC-Authentication-Results: i=2; mx.google.com;
+       dkim=pass header.i=@sunchemical.com header.s=trend-ddei-sunchemical header.b=CYvr5bSO;
+       arc=fail (body hash mismatch);
+       spf=pass (google.com: domain of heewoo.lee@sunchemical.com designates 198.246.155.117 as permitted sender) smtp.mailfrom=HeeWoo.Lee@sunchemical.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=sunchemical.com
+Return-Path: <HeeWoo.Lee@sunchemical.com>
+Received: from USDCPAMAS017.prod.sunchemical.com (USDCPAMAS017.prod.sunchemical.com. [198.246.155.117])
+        by mx.google.com with ESMTPS id af79cd13be357-92e4eb4bd62si63474085a.350.2026.06.28.07.52.38
+        for <nsj6646@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_256_GCM_SHA384 bits=256/256);
+        Sun, 28 Jun 2026 07:52:38 -0700 (PDT)
+Received-SPF: pass (google.com: domain of heewoo.lee@sunchemical.com designates 198.246.155.117 as permitted sender) client-ip=198.246.155.117;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@sunchemical.com header.s=trend-ddei-sunchemical header.b=CYvr5bSO;
+       arc=fail (body hash mismatch);
+       spf=pass (google.com: domain of heewoo.lee@sunchemical.com designates 198.246.155.117 as permitted sender) smtp.mailfrom=HeeWoo.Lee@sunchemical.com;
+       dmarc=pass (p=REJECT sp=REJECT dis=NONE) header.from=sunchemical.com
+Received: from USDCPAMAS017.prod.sunchemical.com (unknown [127.0.0.1])
+	by DDEI (Postfix) with ESMTP id 98077566A92
+	for <nsj6646@gmail.com>; Sun, 28 Jun 2026 10:52:37 -0400 (EDT)
+Received: from USDCPAMAS017.prod.sunchemical.com (unknown [127.0.0.1])
+	by DDEI (Postfix) with ESMTP id 81F145669A5
+	for <nsj6646@gmail.com>; Sun, 28 Jun 2026 10:52:37 -0400 (EDT)
+X-DDEI-TLS-USAGE: Used
+Received: from cas.sunchemical.com (unknown [10.156.97.78])
+	by USDCPAMAS017.prod.sunchemical.com (Postfix) with ESMTPS
+	for <nsj6646@gmail.com>; Sun, 28 Jun 2026 10:52:37 -0400 (EDT)
+Received: from USDCPVMES012.prod.sunchemical.com (10.156.97.77) by
+ USDCPVMES013.prod.sunchemical.com (10.156.97.78) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.37; Sun, 28 Jun 2026 10:52:37 -0400
+Received: from BYAPR08CU003.outbound.protection.outlook.com (40.93.1.106) by
+ USDCPVMES012.prod.sunchemical.com (10.156.97.77) with Microsoft SMTP Server
+ (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.2.2562.37 via Frontend Transport; Sun, 28 Jun 2026 10:52:37 -0400
+ARC-Seal: i=1; a=rsa-sha256; s=arcselector10001; d=microsoft.com; cv=none;
+ b=mlQgLTjWzOvZ7sAYJJLndwxPyrUO7GBTOvERy1jxhuz+lPYLy9rW99A+IS4+QuZdb2/g/oGVmn+gEme8TFuRf79ARZe7vl5nt9gGUMWr8Spmc6B6UunD7fGx7ei6gj2TTuz4az+Vrd8LAwIFma0IXTWwx3ansv8e4ImMdvH41TaqRbZAvpA/vcG3NPzztpfty8pqN8wx4PKJa2yf9RBr9Sz+guFgtq7zQKrXJFad2ABsnf5L0UI8M60SKasZ528C3CHQ2kDMhvLsjLFy1cwsrlulUD08vPv5rCu0deh3JrAOHBEhqojS+Hoy696CJdEa0LrsHzny47G/Ck/dU0GOZQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=microsoft.com;
+ s=arcselector10001;
+ h=From:Date:Subject:Message-ID:Content-Type:MIME-Version:X-MS-Exchange-AntiSpam-MessageData-ChunkCount:X-MS-Exchange-AntiSpam-MessageData-0:X-MS-Exchange-AntiSpam-MessageData-1;
+ bh=9i/VeJYkOmNs8ionM6ootaozoL+iLdCcW7un6obVm2Y=;
+ b=JFE7k1SBFHXdZ0uzr+CMn8jYstDixR0hRHVb8ZiNnCOWBpRnB+Rw8d7wSAQ6XgfTzAAy7BuWzqi137A+c43sXoRL2mJoDf2YEJdc8/mUKoP9tMFne5ZYHCiSCGeo2XxruJJTZrerWXXRU7Z0H3p0LVEGmaBCIQHT+2sHM6HxsfGb3UV5gambiaO+RxJOFvv+GzVyd3aSZdwIcJYynjkv25mvP6n4+ws6jM7vWHEEVPbX/ucJ/fKJAvC6QfA760IlTOYKFWmVQe6t7+9prfnfpaQsLBmc5i8nJPcYQF7RynGiqVMyMa0qIA4tdlb/VOfhQxYf1J0S5CXLEuWvHHG3hA==
+ARC-Authentication-Results: i=1; mx.microsoft.com 1; spf=pass
+ smtp.mailfrom=sunchemical.com; dmarc=pass action=none
+ header.from=sunchemical.com; dkim=pass header.d=sunchemical.com; arc=none
+Received: from LV2PR01MB7672.prod.exchangelabs.com (2603:10b6:408:173::9) by
+ CH3PR01MB8268.prod.exchangelabs.com (2603:10b6:610:176::5) with Microsoft
+ SMTP Server (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384) id
+ 15.21.159.19; Sun, 28 Jun 2026 14:52:33 +0000
+Received: from LV2PR01MB7672.prod.exchangelabs.com
+ ([fe80::e1a9:4f4d:194e:9a8e]) by LV2PR01MB7672.prod.exchangelabs.com
+ ([fe80::e1a9:4f4d:194e:9a8e%6]) with mapi id 15.21.0159.018; Sun, 28 Jun 2026
+ 14:52:33 +0000
+From: "Lee, HeeWoo (Zoe)" <HeeWoo.Lee@sunchemical.com>
+To: "nsj6646@gmail.com" <nsj6646@gmail.com>
+Subject: =?ks_c_5601-1987?B?vK247Q==?=
+Thread-Topic: =?ks_c_5601-1987?B?vK247Q==?=
+Thread-Index: Ad0HDbsMcCeJTpuTRUCz6gGkmWuRTQ==
+Date: Sun, 28 Jun 2026 14:52:33 +0000
+Message-ID: <LV2PR01MB7672B0478D121530DC9252A284E92@LV2PR01MB7672.prod.exchangelabs.com>
+Accept-Language: ko-KR, en-US
+Content-Language: ko-KR
+X-MS-Has-Attach:
+X-MS-TNEF-Correlator:
+authentication-results: dkim=none (message not signed)
+ header.d=none;dmarc=none action=none header.from=sunchemical.com;
+x-ms-publictraffictype: Email
+x-ms-traffictypediagnostic: LV2PR01MB7672:EE_|CH3PR01MB8268:EE_
+x-ms-office365-filtering-correlation-id: c8b72252-22b7-474d-3940-08ded524e308
+x-ms-exchange-senderadcheck: 1
+x-ms-exchange-antispam-relay: 0
+x-microsoft-antispam: BCL:0;ARA:13230040|23010399003|366016|376014|1800799024|38070700021|18002099003|6133799003|8096899003|56012099006|11063799006;
+x-microsoft-antispam-message-info: XEXB/pkvfCTXE69mzqVrS2gzJ6KIuzm7BFLUecSfsD8SZ6StFk7zTP3EBA+uQlA0z1cS87M3ztUDLFGDLFVnwV5AGoksueYKEWlPPHuDfmntVO1PXz0kVcsS01xaiyfM8I3zrudu0jm21Hfx7n6EwGHa6fC/ZqZCk7l2H1rsRQPBUtHhv+ScvxKzqQd0UtKFtDpLmOSBLxJXdk+d3UydgoVF+rtlWmlvTsu8WAmkRcrXcy3NyEEo7UhS6Uo/nfxi1fMXPnqc9x7LeHk0yTceK80DgOWCD7NkK85EBkNX+lIouOhLbXWp9U6XOhjfWF6mIS1G/xsrTonQqE1bYNyepSWn9LFWlqGinHQNH1dLq1hOA2OCJ47/BvAJq59T0/OsaSJ3OaNpQmT4e+NwSTVaxbACwMiz9pORxd1+Hw097SGzgPdDxA9tyyD9eJy8H/do5PJU29ohBGGCXjSeYyCBytj8iRd7j2ORzilN2K7s/vxBbi20rwBtYd8n2/nvWJgMmj7eoKUCVxGnIXyh2H76qnfn26bsIBZkglD7DQGRoI3r1oeo2L7pFqc2TjeytZFUFPpb37rtEN5RtfNGAnBP8EmP19fiuZrTA6ax4ed/7uP1tTns1dyb87In8juqptIn6BzgFfOseXSwHMhH+5H337Nq8He8J4iWkKW+nE+jSjJyuHFb6RnpY/5Zl4VRjeKNTh7eb4oQpdaBSezMmyQBvw==
+x-forefront-antispam-report: CIP:255.255.255.255;CTRY:;LANG:ko;SCL:1;SRV:;IPV:NLI;SFV:NSPM;H:LV2PR01MB7672.prod.exchangelabs.com;PTR:;CAT:NONE;SFS:(13230040)(23010399003)(366016)(376014)(1800799024)(38070700021)(18002099003)(6133799003)(8096899003)(56012099006)(11063799006);DIR:OUT;SFP:1102;
+x-ms-exchange-antispam-messagedata-chunkcount: 1
+x-ms-exchange-antispam-messagedata-0: =?ks_c_5601-1987?B?VDlsVFhEZ0xzMGp5ZGxYYkhlYWJQV1dCd0ZjUVNXQm51VEs0NmFl?=
+ =?ks_c_5601-1987?B?TzhFMFhYK0lrVWd2RDVCLzNZVEhDd3ViSGFCemsyR0tBZVg3eXhq?=
+ =?ks_c_5601-1987?B?dS92dTJrRWV6WHRuS2Z0Wi81a3ZJYnpJeWZpVDgyOCtpRmYxZ2g3?=
+ =?ks_c_5601-1987?B?Ky9YckJqcXBHTGZKTGk4NUxkVmpCZHhDQXdqOStvTVNrTy9UbVFt?=
+ =?ks_c_5601-1987?B?V3F5aU5wemhGb0xwdkJSWG5RVkk2SXpGN0V0VHhEZXZxbVNkdmdF?=
+ =?ks_c_5601-1987?B?NjZSUmhxVlRhNFRmQkp3VWdqKzA0K3ZjcDZKazFsUGRIVythUkI4?=
+ =?ks_c_5601-1987?B?K0pPZjRJQ0djYmlsV01LQ01SUTkzK3RTNVFROTBqOVdDa1F3elVv?=
+ =?ks_c_5601-1987?B?YzdNOEtPZlNtbGJ3VllGYko5SG02UlJmZmMwTU1hMUtUK0FscTcr?=
+ =?ks_c_5601-1987?B?cFdQaU85YnFmbzlHSFRoMGJRZ2czSVd4Nk9mczNvcHJ1dXNzR0RO?=
+ =?ks_c_5601-1987?B?T1FpNkZMeno1TWUyNU0rVldYOVN2Qmw2ZldQcEQ2ei92eGZGMGNF?=
+ =?ks_c_5601-1987?B?ZnRYcEx2bjlPMWJqOUpOd01rNjF6SWl3OXN6ZnFYalpKZVpkT2ZT?=
+ =?ks_c_5601-1987?B?ck52ZERmZi9FZ3BvbGJ2YzArRi9Gc2NCVXF5RTlIM0hwTVJvUWV2?=
+ =?ks_c_5601-1987?B?d1FMTERoSW1SeEdsS3FVeXBuSURmOEI3RjR3cmVoeHcwdERINll2?=
+ =?ks_c_5601-1987?B?c2xxdWJnT2p5QmxqdjNtN25lVG1BaDY1VEkyTk82MGthU2ZvVTYy?=
+ =?ks_c_5601-1987?B?c0ZJRzBLYk96b3craTkreXl3STVvK21tV1lCREFkeEFwZWVRb0dn?=
+ =?ks_c_5601-1987?B?dG94ZWw5bys0Nm5McmtDSjBTUnZ6SmhxTVhnM25STEJ5ZUgzWmk0?=
+ =?ks_c_5601-1987?B?VEo2VkNYN1FFbjRlZFBmdjZJTVNNQUFJcThkWlRJMEYvM1JTZXBh?=
+ =?ks_c_5601-1987?B?cFgweFI4ZGNPeEtHUWFPQUl6SXUycS9LODVkOU4vOFJLcFZkQU1N?=
+ =?ks_c_5601-1987?B?c3N0TmFJcmZpTnJOci9LNWt1cWNUZE5pQTJIMkJOTWFNdkpxTEtZ?=
+ =?ks_c_5601-1987?B?bTczRDEyVXRoc3A2VFVNUnhiakpENVNicWFXR2MrM2NtdmdpYk5l?=
+ =?ks_c_5601-1987?B?NnZUTXlKWnFxT2F2b3F3R1I3aDl6TDd2Sm9zajllV1k0Q09mU1pM?=
+ =?ks_c_5601-1987?B?aWd3blJMOFFyN2owK0VIaUJKMjhHSXJDNGtrMmpQZ3JucG1YdGhu?=
+ =?ks_c_5601-1987?B?akt2cEk1QWlIWGJWUWU4T041eVZuRDc1MW1nNWp5Sm1SZ3lXYlBj?=
+ =?ks_c_5601-1987?B?elFiWXV0UVF0ckEvSEJXVHFWNnZwamw2aG4xSEpJRE5IaitvTmJZ?=
+ =?ks_c_5601-1987?B?TEFnRnVwOFZCT2tOVnZuUzFJYTZxMjJMSVpPZFkvZVFYSXlKOFEv?=
+ =?ks_c_5601-1987?B?N1BJVXh0MEUyYkh6NzJmNGdQMXR3UUpZTWx3S0ZuRWs5WENHNDNF?=
+ =?ks_c_5601-1987?B?Y3lUQzhxZGNLOHlMMWJBbjlKNnVpTFZ6OVNvVWh5cHdXMVJ5TVBE?=
+ =?ks_c_5601-1987?B?RGhaS3FjamJWclR2SEtYRi9vc000aGovVnZ1bXovQUNGVTR4V3Q3?=
+ =?ks_c_5601-1987?B?Q1BKbGxTYWtzU0pnWHk1aWpnUTJuUTJDT0I1VE04WTRFbU9SQWlK?=
+ =?ks_c_5601-1987?B?NjB0TndpVlZyOFBzQ3FZYk15REdLbFFMMXRIaGl3azA3R0p0ZG1n?=
+ =?ks_c_5601-1987?B?amg2Ri9LV3hKK1ZYMGNLdDBKSVduWnN3cXg2bWswbm4yaHh4RzB3?=
+ =?ks_c_5601-1987?B?N0hRckJsTkdoQTlSTE9Sbm01VldKdUU4cnpyVnNnQ2UzV1FiTVR4?=
+ =?ks_c_5601-1987?B?M0ZNVEp1SWtkTjh3SmRiSGMxMjdrN0Z0SW03bUV4V05McTZlM2xj?=
+ =?ks_c_5601-1987?B?b0xRS3I0L3pWQ0VsUi95SHloUnlOL29wcTQ1N3V1VmtWYkhlKzdo?=
+ =?ks_c_5601-1987?B?WjFHUExudDlYeFBEZW8yRWhvTXZtOVpVTHBNNWpPS1d6bEtQNDc0?=
+ =?ks_c_5601-1987?B?OWpiNWNDZEpMSWF2QkdJbm90cUFPb1gvK0gyQ0xJaUlvZmVSekFh?=
+ =?ks_c_5601-1987?B?WjI2N0xkNDFYeUYxTEJlak5zdnkrekxZVkhDUHF0MDRCZStFdC80?=
+ =?ks_c_5601-1987?B?aEYzQjlueWRyb0grRiszQmRveTF3N3c5aUZLRDcvanBucU1EQnpo?=
+ =?ks_c_5601-1987?B?OWxteXBhaTdrYjlPMjF5bG5idFNHb1ZPYmZiMkpoWE1xZ0J5YURa?=
+ =?ks_c_5601-1987?B?UktIeTQxSFFSMTBTd2xoR2plYTFPaHJHTVBhT1RyNlY3T3IxQkhw?=
+ =?ks_c_5601-1987?B?TmM0Z2VGdGYrdWxFdW1lVVc5b2IvSllLM25FWC9ER2RNOW1FTUtq?=
+ =?ks_c_5601-1987?B?UFAvZFU5bzdZaHRNSFljaWRrSUl6UGRNN0VmK0M0Wk84dnhJK29U?=
+ =?ks_c_5601-1987?B?MEQ1QmV4VWNVVEdYdDhPQlc1YWI2ODN6TXhEUXBSWGlwY25meDY3?=
+ =?ks_c_5601-1987?B?Yjc5d0ZVcXNTK1RiZkZDU3lKR0VhNTR0MFJ1RmdYTWNtVVBiSm5t?=
+ =?ks_c_5601-1987?B?dmI1YjJjSENLOEZtSnFYYlpHMjlxQ1RNU2ZYNHAxMWx3QT09?=
+Content-Type: multipart/alternative;
+	boundary="_000_LV2PR01MB7672B0478D121530DC9252A284E92LV2PR01MB7672prod_"
+MIME-Version: 1.0
+X-Exchange-RoutingPolicyChecked: JTfcPWXFbbmLXnXa+aMGOH3iF62cp/YwKayCHcz0xygVT6joiSTO/bEf1C0kOI9FiiePM8eP6LofWQl7slnbAMbOzQRGet04DA7l02/AoMomh5/BLsRBJ2Xe6UCpULPPe3yoNg4i6esKHyhEYvPVath3G9+CdcFSBLNjMOg+GNSEQXKNgGaZPJ5UQZZ6Z34Y8OqCshBVhw00LTHleno1bV4T9yWa2aVPKhD/CvqzsajI0B6wkHEe22PWLeL3k1PpbLlrgoHhwJF626oHKe1Qi/lhFTI2azHu4uO5pdVQB5fdvQZOXtRqyvl5vi1x2vjGmXpUZvkiiu1X9XAIm0gj+Q==
+X-MS-Exchange-CrossTenant-AuthAs: Internal
+X-MS-Exchange-CrossTenant-AuthSource: LV2PR01MB7672.prod.exchangelabs.com
+X-MS-Exchange-CrossTenant-Network-Message-Id: c8b72252-22b7-474d-3940-08ded524e308
+X-MS-Exchange-CrossTenant-originalarrivaltime: 28 Jun 2026 14:52:33.7212
+ (UTC)
+X-MS-Exchange-CrossTenant-fromentityheader: Hosted
+X-MS-Exchange-CrossTenant-id: e2ab8429-1764-4753-a80c-3e4980e946e0
+X-MS-Exchange-CrossTenant-mailboxtype: HOSTED
+X-MS-Exchange-CrossTenant-userprincipalname: SM0K4cy4zuX0Rw6iTiWG8Fe7pntbSG3qZd0QqPhtura/9bZpH+6K8gNWS17oxuzZ5eYg4+wNPhkEcuHTu9d/yXozpcO/b9LAFbXRj8ranac=
+X-MS-Exchange-Transport-CrossTenantHeadersStamped: CH3PR01MB8268
+X-TMASE-Version: DDEI-5.1-9.1.1004-30034.007
+X-TMASE-Result: 10--12.280000-10.000000
+X-TMASE-MatchedRID: p8iFwjyePfaiSQnnYlpIfmK3N9p/OFh6JnJivQBnRD9eFIebCR7Ayp/v
+	Lk4ECKhoNtrqBJtuOX6I40w6RysGJoc7+Qb8+03pG66tuBin4dAIKj6WwO7KdVYiM8eC1pUc90i
+	bxL4bz6Auy+d2rXUBklI4GDn0XY4hpoPHQXywp1eA3KVVsj8QDLigBuDjJcn/ODaN+C/dmn3352
+	h5EyPfUB6cyCyJFmun++9Cnyn7f7iuEAHkLyBnqkcp08JfWWIexoZTHZ+XCFFHuT+SGPC2aq4rm
+	QIDoB6So6NSthBx1ulOYCDDesGQlw7F+ID+uE2hRuBOZ/izFDSaQIbCWIWia+mdrzaSKL9co8WM
+	kQWv6iXgT2zXYa9/naGhAVSaSDxzGNb1IfQRpEnI+J/9cwnC0oRb/GVrjKQajoczmuoPCq2uZ17
+	0wcsjm6WzTjZFbwyyA8ImRLC+JCXGlaqCDfrzzVwqqH5IRKk7
+X-TMASE-SNAP-Result: 1.821001.0001-0-1-22:0,33:0,34:0-0
+X-TMASE-INERTIA: 0-0;;;;
+X-TMASE-XGENCLOUD: 442f99e2-7255-49ff-96c9-91402b427b26-0-0-200-0
+X-TM-DDEI-Disclaimer: 
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sunchemical.com;
+	s=trend-ddei-sunchemical; t=1782658357;
+	bh=KbRf0ac8E6MQh7zmnQHnkLx36z/2K0InxoaQOKc0Ww4=; l=11847;
+	h=From:To:Date;
+	b=CYvr5bSOg+mskhodLbUBFA2zqBtIwdJatySaF/7nlgn+4Vrlj+fIrPuIAZw84uuWf
+	 PE+qkM4T97wGDHkt6KGyo2L8dPswxIHBwZsuIYVeoV0aO8Vekoj88hzCmpOMx9viau
+	 /Uw/90dVFFE8J5FqSdusmXL9WtsBJ4SyMg1CUju6iC9ph+JrkNoMH4J2qTJnNYN0qm
+	 n4qN9BEVzUkcjLfELbXTZ31AIMyhjJxaFlFqw5hL6Z/0eQOxrILezDh0IoeO/cD6hq
+	 g0QsuQqzUveTjBUu5+ceZHJ7kvLLH29SJ+/eNg1Ylo3xmqoHmhsqLFCIbbOHWYqKDn
+	 KRccs55sPE6jw==
+
+--_000_LV2PR01MB7672B0478D121530DC9252A284E92LV2PR01MB7672prod_
+Content-Type: text/plain;
+	charset="ks_c_5601-1987"
+Content-Transfer-Encoding: base64
+
+DQoNCkJlc3QgcmVnYXJkcywNCg0KKFpvZSkgSGVld29vIExlZQ0KUHJvZHVjdCBTYWZldHkgYW5k
+IFJlZ3VsYXRpb25zLCBLb3JlYSwgQ29sb3IgTWF0ZXJpYWxzDQoNClN1biBDaGVtaWNhbA0KMjFz
+dCBGbG9vciwgQUlBIFRvd2VyLCBUb25naWwtcm8gMi1naWwgMTYNCkp1bmctZ3UsIFNlb3VsLCBL
+b3JlYSAwNDUxMQ0KVGVsOiArODIgMiA2MTkwIDgzMDcgKENvZ2VudCA4Njk0IDI3MjApDQpoZWV3
+b28ubGVlQHN1bmNoZW1pY2FsLmNvbTxtYWlsdG86a2lqdW4ueW91bkBzdW5jaGVtaWNhbC5jb20+
+DQoNCkV4cGVyaWVuY2UuIFRyYW5zZm9ybWF0aW9uLg0KDQpTdW4gQ2hlbWljYWwgS29yZWEgTHRk
+Lg0KDQoNClRoaXMgbWVzc2FnZSBtYXkgY29udGFpbiBjb25maWRlbnRpYWwsIHByb3ByaWV0YXJ5
+IG9yIGxlZ2FsbHkgcHJpdmlsZWdlZCBpbmZvcm1hdGlvbiBhbmQgaXMgaW50ZW5kZWQgb25seSBm
+b3IgdGhlIHVzZSBvZiB0aGUgYWRkcmVzc2VlIG5hbWVkIGFib3ZlLiAgTm8gY29uZmlkZW50aWFs
+aXR5IG9yICBwcml2aWxlZ2UgaXMgd2FpdmVkIG9yIGxvc3QgYnkgYW55IGVycm9yIGluIHRyYW5z
+bWlzc2lvbi4gIElmIHlvdSBhcmUgbm90IHRoZSBpbnRlbmRlZCByZWNpcGllbnQgb2YgdGhpcyBt
+ZXNzYWdlIHlvdSBhcmUgaGVyZWJ5IG5vdGlmaWVkIHRoYXQgeW91IG11c3Qgbm90IHVzZSwgZGlz
+c2VtaW5hdGUsIGNvcHkgaXQgaW4gYW55IGZvcm0gb3IgdGFrZSBhbnkgYWN0aW9uIGluIHJlbGlh
+bmNlIG9uIGl0Lg==
+
+--_000_LV2PR01MB7672B0478D121530DC9252A284E92LV2PR01MB7672prod_
+Content-Type: text/html;
+	charset="ks_c_5601-1987"
+Content-Transfer-Encoding: quoted-printable
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-mi=
+crosoft-com:office:office" xmlns:w=3D"urn:schemas-microsoft-com:office:wo=
+rd" xmlns:m=3D"http://schemas.microsoft.com/office/2004/12/omml" xmlns=3D=
+"http://www.w3.org/TR/REC-html40">
+<head>
+<meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3Dks_c_56=
+01-1987">
+<meta name=3D"Generator" content=3D"Microsoft Word 15 (filtered medium)">
+<style><!--
+/* Font Definitions */
+@font-face
+=09{font-family:"Cambria Math";
+=09panose-1:2 4 5 3 5 4 6 3 2 4;}
+@font-face
+=09{font-family:Calibri;
+=09panose-1:2 15 5 2 2 2 4 3 2 4;}
+@font-face
+=09{font-family:Aptos;}
+@font-face
+=09{font-family:"=B8=BC=C0=BA =B0=ED=B5=F1";
+=09panose-1:2 11 5 3 2 0 0 2 0 4;}
+@font-face
+=09{font-family:"\@=B8=BC=C0=BA =B0=ED=B5=F1";}
+@font-face
+=09{font-family:"?? ??";}
+/* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+=09{margin:0cm;
+=09text-align:justify;
+=09text-justify:inter-ideograph;
+=09text-autospace:none;
+=09word-break:break-hangul;
+=09font-size:11.0pt;
+=09font-family:"=B8=BC=C0=BA =B0=ED=B5=F1";
+=09mso-ligatures:standardcontextual;}
+span.EmailStyle17
+=09{mso-style-type:personal-compose;
+=09font-family:"=B8=BC=C0=BA =B0=ED=B5=F1";
+=09color:windowtext;}
+.MsoChpDefault
+=09{mso-style-type:export-only;}
+.MsoPapDefault
+=09{mso-style-type:export-only;
+=09text-align:justify;
+=09text-justify:inter-ideograph;
+=09text-autospace:none;
+=09word-break:break-hangul;}
+/* Page Definitions */
+@page WordSection1
+=09{size:612.0pt 792.0pt;
+=09margin:3.0cm 72.0pt 72.0pt 72.0pt;}
+div.WordSection1
+=09{page:WordSection1;}
+--></style><!--[if gte mso 9]><xml>
+<o:shapedefaults v:ext=3D"edit" spidmax=3D"1026" />
+</xml><![endif]--><!--[if gte mso 9]><xml>
+<o:shapelayout v:ext=3D"edit">
+<o:idmap v:ext=3D"edit" data=3D"1" />
+</o:shapelayout></xml><![endif]-->
+</head>
+<body lang=3D"KO" link=3D"#467886" vlink=3D"#96607D" style=3D"word-wrap:b=
+reak-word">
+<div class=3D"WordSection1">
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"DE" style=3D"font-size:10.0pt;font-family:&quot;Calibri&quo=
+t;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm"><o:p>=
+&nbsp;</o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"DE" style=3D"font-size:10.0pt;font-family:&quot;Calibri&quo=
+t;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm"><o:p>=
+&nbsp;</o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&quot;Calibri&=
+quot;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm">Be=
+st regards,&nbsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;fo=
+nt-family:&quot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span><=
+/p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&quot;Calibri&=
+quot;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm">&n=
+bsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&qu=
+ot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<b><span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans-ser=
+if;color:black;border:none windowtext 1.0pt;padding:0cm">(Zoe) Heewoo Lee=
+</span></b><span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&qu=
+ot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans-serif;=
+color:black;border:none windowtext 1.0pt;padding:0cm">Product Safety and =
+Regulations, Korea, Color Materials</span><span lang=3D"EN-US" style=3D"f=
+ont-size:10.0pt;font-family:&quot;Calibri&quot;,sans-serif;color:black;bo=
+rder:none windowtext 1.0pt;padding:0cm">&nbsp;</span><span lang=3D"EN-US"=
+ style=3D"font-size:10.0pt;font-family:&quot;Calibri&quot;,sans-serif;col=
+or:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&quot;Calibri&=
+quot;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm">&n=
+bsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&qu=
+ot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<b><span lang=3D"EN-US" style=3D"font-size:12.0pt;font-family:&quot;Calib=
+ri&quot;,sans-serif;color:#EE3224;border:none windowtext 1.0pt;padding:0c=
+m">Sun Chemical&nbsp;</span></b><span lang=3D"EN-US" style=3D"font-size:1=
+0.0pt;font-family:&quot;Calibri&quot;,sans-serif;color:black"><o:p></o:p>=
+</span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans-serif;=
+color:black;border:none windowtext 1.0pt;padding:0cm">21<sup>st</sup>&nbs=
+p;Floor, AIA Tower, Tongil-ro 2-gil 16&nbsp;</span><span lang=3D"EN-US" s=
+tyle=3D"font-size:10.0pt;font-family:&quot;Calibri&quot;,sans-serif;color=
+:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans-serif;=
+color:black;border:none windowtext 1.0pt;padding:0cm">Jung-gu, Seoul, Kor=
+ea 04511&nbsp;&nbsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt=
+;font-family:&quot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></spa=
+n></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans-serif;=
+color:black;border:none windowtext 1.0pt;padding:0cm">Tel: +82
+</span><span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans=
+-serif;color:black">2 6190 830</span><span lang=3D"EN-US" style=3D"font-f=
+amily:&quot;Calibri&quot;,sans-serif;color:black">7
+</span><span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans=
+-serif;color:black;border:none windowtext 1.0pt;padding:0cm">(Cogent 8694=
+ 2720)&nbsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;font-fa=
+mily:&quot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"DE" style=3D"font-family:&quot;Calibri&quot;,sans-serif;col=
+or:black;border:none windowtext 1.0pt;padding:0cm"><a href=3D"mailto:kiju=
+n.youn@sunchemical.com"><span style=3D"color:blue">heewoo.lee@sunchemical=
+.com</span></a></span><span lang=3D"EN-US" style=3D"font-family:&quot;Cal=
+ibri&quot;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0c=
+m">&nbsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;font-famil=
+y:&quot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&quot;Calibri&=
+quot;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm">&n=
+bsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&qu=
+ot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<b><span lang=3D"EN-US" style=3D"font-family:&quot;Calibri&quot;,sans-ser=
+if;color:black;border:none windowtext 1.0pt;padding:0cm">Experience. Tran=
+sformation.&nbsp;</span></b><span lang=3D"EN-US" style=3D"font-size:10.0p=
+t;font-family:&quot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></sp=
+an></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&quot;Calibri&=
+quot;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm">&n=
+bsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;font-family:&qu=
+ot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span></p>
+<p class=3D"MsoNormal" align=3D"left" style=3D"text-align:left;text-autos=
+pace:ideograph-numeric ideograph-other;word-break:keep-all">
+<span lang=3D"EN-US" style=3D"font-size:8.0pt;font-family:&quot;Calibri&q=
+uot;,sans-serif;color:black;border:none windowtext 1.0pt;padding:0cm">Sun=
+ Chemical</span><span lang=3D"EN-US" style=3D"font-size:8.0pt;font-family=
+:&quot;Calibri&quot;,sans-serif;color:black;border:none windowtext 1.0pt;=
+padding:0cm">
+ Korea Ltd.&nbsp;</span><span lang=3D"EN-US" style=3D"font-size:10.0pt;fo=
+nt-family:&quot;Calibri&quot;,sans-serif;color:black"><o:p></o:p></span><=
+/p>
+<p class=3D"MsoNormal"><span lang=3D"EN-US"><o:p>&nbsp;</o:p></span></p>
+</div>
+</body>
+</html>
+
+<table width=3D100%><tr><td bgcolor=3D#ffffff><font color=3D#000000><pre>=
+<p>This message may contain confidential, proprietary or legally privileg=
+ed information and is intended only for the use of the addressee named ab=
+ove.&nbsp; No confidentiality or&nbsp; privilege is waived or lost by any=
+ error in transmission.&nbsp; If you are not the intended recipient of th=
+is message you are hereby notified that you must not use, disseminate, co=
+py it in any form or take any action in reliance on it.</p></pre></font><=
+/td></tr></table>
+
+--_000_LV2PR01MB7672B0478D121530DC9252A284E92LV2PR01MB7672prod_--
+
