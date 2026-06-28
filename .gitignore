@@ -1,31 +1,16 @@
-# Python
+# Python 캐시 및 가상환경
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
 .venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.toast
-.ipynb_checkpoints
+venv/
 
-# Databases & Environments
-.env
-.db
-*.sqlite3
-
-# OS temp files
-.DS_Store
+# Windows 임시 파일
 Thumbs.db
-ehthumbs.db
 
-# Project specific
+# 아웃룩 대량 배포 시스템 임시/설정 파일
 logs/
 outlook_config.json
 test_run_env/
-
-# MS Office temporary lock files
 ~$*
