@@ -265,18 +265,35 @@ class MailDistributionContext:
         self._load_signature()
             
     def _load_signature(self):
-        # ponytail: 서명 파일 경로 탐색 (미지정 시 현재 폴더의 signature.html이 디폴트)
+        # ponytail: 서명 파일 경로 탐색 (미지정 시 현재 폴더의 signature.html 또는 signature/signature.html을 자동 탐색)
         sig_path = self.signature_path
         if not sig_path:
-            sig_path = "signature.html"
-            
+            for candidate in ["signature.html", "signature/signature.html"]:
+                if os.path.exists(candidate):
+                    sig_path = candidate
+                    break
+            if not sig_path:
+                sig_path = "signature.html"  # 로깅 또는 기본 백업용
+                
         if os.path.exists(sig_path):
-            try:
-                with open(sig_path, "r", encoding="utf-8") as f:
-                    self.signature_html = f.read().strip()
+            # ponytail: 다양한 인코딩(UTF-8, CP949 등)을 시도하여 서명을 성공적으로 디코딩해냅니다.
+            loaded_content = None
+            for enc in ["utf-8", "cp949", "euc-kr", "utf-16"]:
+                try:
+                    with open(sig_path, "r", encoding=enc) as f:
+                        loaded_content = f.read().strip()
+                    break
+                except UnicodeDecodeError:
+                    continue
+                except Exception as e:
+                    self.logger.warning(f"메일 서명 파일({sig_path}) 로드 시도 중 에러: {str(e)}")
+                    break
+                    
+            if loaded_content is not None:
+                self.signature_html = loaded_content
                 self.logger.info(f"메일 서명을 성공적으로 로드했습니다: {os.path.abspath(sig_path)}")
-            except Exception as e:
-                self.logger.warning(f"메일 서명 파일({sig_path}) 로드 중 에러 발생: {str(e)}")
+            else:
+                self.logger.warning(f"메일 서명 파일({sig_path})의 인코딩을 해석할 수 없습니다.")
         else:
             if self.signature_path:
                 self.logger.warning(f"지정된 서명 파일이 존재하지 않습니다: {self.signature_path}")

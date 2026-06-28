@@ -147,6 +147,41 @@ class TestMailDistributionContext(unittest.TestCase):
         finally:
             context.close()
 
+    def test_mail_signature_default_fallback_search(self):
+        """--signature를 지정하지 않았을 때, signature/signature.html 또는 signature.html을 예비 탐색해 로드하는지 검증."""
+        os.makedirs(os.path.join(self.test_dir, "signature"), exist_ok=True)
+        sig_file = os.path.join(self.test_dir, "signature", "signature.html")
+        with open(sig_file, "w", encoding="utf-8") as f:
+            f.write("<div class='sig'>Best Regards, Fallback.</div>")
+            
+        excel_path = os.path.join(self.test_dir, "temp_fallback_rec.xlsx")
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws_rec = wb.active
+        ws_rec.title = "Recipients"
+        ws_rec.append(["To", "Subject", "Body"])
+        ws_rec.append(["fallback@example.com", "Hello", "Body content"])
+        wb.save(excel_path)
+        wb.close()
+        
+        # signature_path를 지정하지 않고, 작업 디렉토리가 아닌 msds_dir 등 우회는 없으므로
+        # load_jobs의 CWD 탐색을 위해 signature/signature.html 로컬 파일을 생성하고 직접 테스트
+        # 실제 로컬 signature/signature.html 생성을 시뮬레이션하기 위해
+        # MailDistributionContext 내부 경로를 mock하거나 혹은 OS CWD를 기반으로 signature/signature.html에 임시 생성
+        # (주의: 실제 루트의 signature/signature.html을 덮어쓰지 않도록, os.chdir 등을 임시 적용)
+        import sys
+        old_cwd = os.getcwd()
+        os.chdir(self.test_dir)
+        context = MailDistributionContext("temp_fallback_rec.xlsx")
+        try:
+            # test_dir 내에 signature/signature.html이 있으므로 CWD=test_dir 상태에서 signature_path 미지정 구동
+            jobs = context.load_jobs()
+            self.assertEqual(len(jobs), 1)
+            self.assertIn("Best Regards, Fallback.", jobs[0].body)
+        finally:
+            context.close()
+            os.chdir(old_cwd)
+
 
 if __name__ == "__main__":
     unittest.main()
