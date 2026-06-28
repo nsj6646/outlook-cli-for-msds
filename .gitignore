@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.toast
+.ipynb_checkpoints
+
+# Databases & Environments
+.env
+.db
+*.sqlite3
+
+# OS temp files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Project specific
+logs/
+outlook_config.json
+test_run_env/
+
+# MS Office temporary lock files
+~$*
