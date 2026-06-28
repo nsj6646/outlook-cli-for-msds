@@ -14,3 +14,8 @@ logs/
 outlook_config.json
 test_run_env/
 ~$*
+
+# 빌드 및 릴리즈 산출물
+build/
+dist/
+*.spec
