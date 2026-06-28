@@ -53,7 +53,7 @@
 
 ## 3. 비기능 요구사항
 - **데이터 소스 연동**: 
-  - `Recipients` 시트(To, Cc, Bcc, Subject, Body, Company, Contact, From, 예약시간 컬럼)와 제품군이 매핑된 `TableData` 시트(Email, 제품코드, 제품명 컬럼)의 2개 시트로 구성된 단일 엑셀 파일([test_recipients_v4.xlsx](file:///C:/Users/seungjoo.na/Documents/antigravity/clever-darwin/test_recipients_v4.xlsx))을 데이터베이스로 활용합니다. (엑셀 상에 기존 "번호" 컬럼이 잔존해 있더라도 프로그램은 이를 파싱 시 완전 무시합니다.)
+  - `Recipients` 시트(To, Cc, Bcc, Subject, Company, Contact, Body, From, 예약시간 컬럼)와 제품군이 매핑된 `TableData` 시트(Email, 제품코드, 제품명 컬럼)의 2개 시트로 구성된 단일 엑셀 파일([test_recipients_v4.xlsx](file:///C:/Users/seungjoo.na/Documents/antigravity/clever-darwin/test_recipients_v4.xlsx))을 데이터베이스로 활용합니다. (엑셀 상에 기존 "번호" 컬럼이 잔존해 있더라도 프로그램은 이를 파싱 시 완전 무시합니다.)
   - **필수 정보 스킵 검증**: `Company` 또는 `Contact` 컬럼 값이 누락되거나 비어있는 행은 메일 작성을 전면 건너뛰고(Skip) 감사 로그에 오류를 기록합니다.
   - **스킵 건 재송용 엑셀 자동 추출**: 대량 배포 완료 시점에 스킵된 수신처가 단 1건이라도 존재하면, 현재 경로에 `[원본파일명]_skipped_[YYYYMMDD_HHMMSS].xlsx` 파일을 자동 출력합니다. 이 파일은 원본과 완전 동치인 `Recipients`, `TableData` 시트 구조를 유지하며, 오류가 발생한 수신 정보 및 해당 이메일의 제품 정보 행만 걸러내어 저장하므로 즉각적인 재송 수정 구동을 지원합니다.
 - **백그라운드 초안 일괄 저장**:
