@@ -26,6 +26,7 @@ class ExcelParser:
         self.table_groups = {}
         self.table_headers = []
         self.rec_headers = []
+        self.skipped_recipients = []
         self._parse()
 
     def _parse(self):
@@ -194,6 +195,55 @@ class ExcelParser:
     def get_table_headers(self):
         return self.table_headers
 
+    def export_skipped(self):
+        """스킵된 수신 정보와 취급 제품 데이터만 발라내서 [원본파일명]_skipped_[YYYYMMDD_HHMMSS].xlsx 로 추출합니다."""
+        if not self.skipped_recipients:
+            return
+            
+        import openpyxl
+        import datetime
+        
+        wb_new = openpyxl.Workbook()
+        
+        # 1. Recipients 시트 구성
+        ws_rec = wb_new.active
+        ws_rec.title = "Recipients"
+        ws_rec.append(self.rec_headers)
+        
+        for rec in self.skipped_recipients:
+            row_cells = []
+            rep_dict = rec.get("replace_dict", {})
+            for h in self.rec_headers:
+                if not h:
+                    row_cells.append("")
+                    continue
+                h_key = str(h).strip().lower()
+                row_cells.append(rep_dict.get(h_key, ""))
+            ws_rec.append(row_cells)
+            
+        # 2. TableData 시트 구성
+        ws_tbl = wb_new.create_sheet("TableData")
+        ws_tbl.append(["Email"] + self.table_headers)
+        
+        skipped_emails = {rec["to"].strip().lower() for rec in self.skipped_recipients}
+        
+        for email in skipped_emails:
+            if email in self.table_groups:
+                for product in self.table_groups[email]:
+                    row_cells = [email]
+                    for th in self.table_headers:
+                        if str(th).lower() == "email":
+                            continue
+                        row_cells.append(product.get(th, ""))
+                    ws_tbl.append(row_cells)
+                    
+        # 3. 파일 저장
+        base, ext = os.path.splitext(self.excel_path)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        skipped_filename = f"{base}_skipped_{timestamp}{ext}"
+        wb_new.save(skipped_filename)
+        wb_new.close()
+
 
 class HtmlTableRenderer:
     """특정 이메일에 귀속된 표 데이터를 바탕으로 인라인 CSS가 가미된 미려한 HTML 표 문자열을 빌드하는 책임."""
@@ -354,13 +404,13 @@ class MailDistributionContext:
         self.logger.info(f"엑셀 데이터 로딩을 개시합니다: {self.excel_path}")
         
         try:
-            parser = ExcelParser(self.excel_path)
+            self.parser = ExcelParser(self.excel_path)
         except Exception as e:
             self.logger.error(f"엑셀 로드에 실패하여 프로그램을 중단합니다: {str(e)}")
             raise
             
-        recipients = parser.get_recipients()
-        table_headers = parser.get_table_headers()
+        recipients = self.parser.get_recipients()
+        table_headers = self.parser.get_table_headers()
         html_table_renderer = HtmlTableRenderer(table_headers)
         
         jobs: List[MailJob] = []
@@ -381,14 +431,24 @@ class MailDistributionContext:
             to_addr = rec["to"]
             cc_addr = rec["cc"]
             bcc_addr = rec["bcc"]
-            subject = rec["subject"]
             attachments = rec["attachments"][:]
             
             self.logger.info(f"[{idx}/{len(recipients)}] 수신자 '{to_addr}' 분석 중...")
             
+            # ponytail: Company 및 Contact 필수 항목 유효성 체크
+            company = rec.get("replace_dict", {}).get("company", "").strip()
+            contact = rec.get("replace_dict", {}).get("contact", "").strip()
+            if not company or not contact:
+                self.logger.error(f"   -> [오류/건너뜀] 수신처 '{to_addr}'의 고객사명(Company) 또는 담당자명(Contact) 정보가 누락되었습니다. 이 수신자는 스킵합니다.")
+                self.parser.skipped_recipients.append(rec)
+                continue
+                
+            # 메일 제목 양식 변경: Subject + " - " + Company
+            subject = rec["subject"] + " - " + company
+            
             # 1. 취급 제품 테이블 빌드 및 MSDS 접두사 매칭 스캔
             html_table = ""
-            table_rows = parser.get_table_data(to_addr)
+            table_rows = self.parser.get_table_data(to_addr)
             if table_rows and table_headers:
                 html_table = html_table_renderer.render(table_rows)
 
@@ -421,9 +481,11 @@ class MailDistributionContext:
             # 개별 검증 1: MSDS 첨부파일 실종 시 스킵 정책
             if msds_missing:
                 self.logger.error(f"   -> [오류/건너뜀] 제품코드 '{missing_prod_code}'에 해당하는 MSDS 서류가 폴더 내에 실종되었습니다. 이 수신자는 스킵합니다.")
+                self.parser.skipped_recipients.append(rec)
                 continue
 
             # 2. 본문 치환 엔진 가동 및 표 병합
+            header_line = f"수신: {company} {contact}님<br><br>"
             final_body = ""
             if rec["body"]:
                 body_html = rec["body"].replace("\n", "<br>")
@@ -437,6 +499,9 @@ class MailDistributionContext:
                     final_body += "<br><br>" + html_table
             else:
                 final_body = html_table if html_table else "본문 내용이 없습니다."
+                
+            # 최상단에 수신인 머리글 강제 이식
+            final_body = header_line + final_body
                 
             # ponytail: 서명 파일 내용이 로드되어 있다면 최종 본문 하단에 병합
             if self.signature_html:
@@ -455,6 +520,7 @@ class MailDistributionContext:
                     pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
                     if not re.match(pattern, deferred_time):
                         self.logger.error(f"   -> [오류/건너뜀] 예약 발송 시간 '{deferred_time}'의 날짜 포맷이 올바르지 않습니다 (YYYY-MM-DD HH:MM:SS 규격 필요). 이 수신자는 스킵합니다.")
+                        self.parser.skipped_recipients.append(rec)
                         continue
             
             # 발신인 계정 결정
@@ -477,7 +543,14 @@ class MailDistributionContext:
         return jobs
 
     def close(self):
-        """로거 파일 핸들러의 스트림 락을 안전하게 해제합니다."""
+        """로거 파일 핸들러의 스트림 락을 안전하게 해제하고 스킵 엑셀이 존재할 시 내보냅니다."""
+        try:
+            if hasattr(self, "parser") and self.parser.skipped_recipients:
+                self.parser.export_skipped()
+        except Exception as e:
+            if hasattr(self, "logger"):
+                self.logger.error(f"스킵된 수신처 엑셀 추출 실패: {str(e)}")
+                
         handlers = self.logger.handlers[:]
         for handler in handlers:
             try:

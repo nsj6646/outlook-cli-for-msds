@@ -99,8 +99,8 @@ class TestMailDistributionContext(unittest.TestCase):
         wb = openpyxl.Workbook()
         ws_rec = wb.active
         ws_rec.title = "Recipients"
-        ws_rec.append(["To", "Subject", "Body"])
-        ws_rec.append(["target@example.com", "Test", "Content"])
+        ws_rec.append(["To", "Subject", "Body", "Company", "Contact"])
+        ws_rec.append(["target@example.com", "Test", "Content", "테스트화학", "박담당"])
         
         ws_tbl = wb.create_sheet("TableData")
         ws_tbl.append(["Email", "제품코드", "제품명"])
@@ -131,8 +131,8 @@ class TestMailDistributionContext(unittest.TestCase):
         wb = openpyxl.Workbook()
         ws_rec = wb.active
         ws_rec.title = "Recipients"
-        ws_rec.append(["To", "Subject", "Body"])
-        ws_rec.append(["sig_test@example.com", "Hello Subject", "Here is main body."])
+        ws_rec.append(["To", "Subject", "Body", "Company", "Contact"])
+        ws_rec.append(["sig_test@example.com", "Hello Subject", "Here is main body.", "썬화학", "최부장"])
         wb.save(excel_path)
         wb.close()
         
@@ -159,8 +159,8 @@ class TestMailDistributionContext(unittest.TestCase):
         wb = openpyxl.Workbook()
         ws_rec = wb.active
         ws_rec.title = "Recipients"
-        ws_rec.append(["To", "Subject", "Body"])
-        ws_rec.append(["fallback@example.com", "Hello", "Body content"])
+        ws_rec.append(["To", "Subject", "Body", "Company", "Contact"])
+        ws_rec.append(["fallback@example.com", "Hello", "Body content", "예비화학", "홍대리"])
         wb.save(excel_path)
         wb.close()
         
@@ -190,8 +190,8 @@ class TestMailDistributionContext(unittest.TestCase):
         wb = openpyxl.Workbook()
         ws_rec = wb.active
         ws_rec.title = "Recipients"
-        ws_rec.append(["To", "Cc", "Bcc", "Subject", "Body"])
-        ws_rec.append(["target@example.com", "cc@example.com", "bcc1@example.com;bcc2@example.com", "Bcc Test", "Body content"])
+        ws_rec.append(["To", "Cc", "Bcc", "Subject", "Body", "Company", "Contact"])
+        ws_rec.append(["target@example.com", "cc@example.com", "bcc1@example.com;bcc2@example.com", "Bcc Test", "Body content", "비씨화학", "유차장"])
         wb.save(excel_path)
         wb.close()
         
@@ -200,6 +200,62 @@ class TestMailDistributionContext(unittest.TestCase):
             jobs = context.load_jobs()
             self.assertEqual(len(jobs), 1)
             self.assertEqual(jobs[0].bcc_addr, "bcc1@example.com;bcc2@example.com")
+        finally:
+            context.close()
+
+    def test_subject_format_and_skipped_export(self):
+        """Company/Contact 수집, 제목 조립, 본문 상단 수신 구문 삽입 및 스킵 엑셀 파일 생성을 통합 검증."""
+        os.makedirs(self.test_dir, exist_ok=True)
+        # P1001_MSDS.pdf 임시 생성하여 MSDS 미싱 방지
+        valid_msds = os.path.join(self.test_dir, "P1001_MSDS.pdf")
+        with open(valid_msds, "w") as f:
+            f.write("P1001 MSDS Content")
+            
+        excel_path = os.path.join(self.test_dir, "temp_skipped_rec.xlsx")
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws_rec = wb.active
+        ws_rec.title = "Recipients"
+        ws_rec.append(["To", "Subject", "Body", "Company", "Contact"])
+        # 1행: 정상 케이스
+        ws_rec.append(["success@example.com", "MSDS 제공건", "본문내용", "썬케미컬", "이희우 부장"])
+        # 2행: 스킵 케이스 (Company 누락)
+        ws_rec.append(["skip1@example.com", "MSDS 제공건", "본문내용", "", "김담당"])
+        # 3행: 스킵 케이스 (Contact 누락)
+        ws_rec.append(["skip2@example.com", "MSDS 제공건", "본문내용", "네오화학", None])
+        
+        ws_tbl = wb.create_sheet("TableData")
+        ws_tbl.append(["Email", "제품코드", "제품명"])
+        ws_tbl.append(["success@example.com", "P1001", "알파"])
+        ws_tbl.append(["skip1@example.com", "P1002", "베타"])
+        wb.save(excel_path)
+        wb.close()
+        
+        context = MailDistributionContext(excel_path, msds_dir=self.test_dir)
+        try:
+            jobs = context.load_jobs()
+            self.assertEqual(len(jobs), 1)
+            job = jobs[0]
+            self.assertEqual(job.subject, "MSDS 제공건 - 썬케미컬")
+            self.assertIn("수신: 썬케미컬 이희우 부장님", job.body)
+            self.assertEqual(len(context.parser.skipped_recipients), 2)
+            
+            context.close()
+            
+            import glob
+            skipped_files = glob.glob(os.path.join(self.test_dir, "temp_skipped_rec_skipped_*.xlsx"))
+            self.assertEqual(len(skipped_files), 1)
+            
+            wb_skipped = openpyxl.load_workbook(skipped_files[0])
+            ws_s_rec = wb_skipped["Recipients"]
+            self.assertEqual(ws_s_rec.max_row, 3)
+            self.assertEqual(ws_s_rec.cell(row=2, column=1).value, "skip1@example.com")
+            
+            ws_s_tbl = wb_skipped["TableData"]
+            self.assertEqual(ws_s_tbl.max_row, 2)
+            self.assertEqual(ws_s_tbl.cell(row=2, column=1).value, "skip1@example.com")
+            self.assertEqual(ws_s_tbl.cell(row=2, column=2).value, "P1002")
+            wb_skipped.close()
         finally:
             context.close()
 

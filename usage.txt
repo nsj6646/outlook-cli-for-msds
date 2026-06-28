@@ -4,8 +4,9 @@
 
 1. 필수 파일 및 폴더 구조
   - 엑셀 파일 내 2개 시트 필수:
-    * 'Recipients' 시트: To(수신), Cc(참조, ;구분), Bcc(비밀참조, ;구분), Subject(제목), Body(본문), From(발신계정), 예약시간(YYYY-MM-DD HH:MM:SS)
+    * 'Recipients' 시트: To(수신), Cc(참조, ;구분), Bcc(비밀참조, ;구분), Subject(제목), Body(본문), Company(고객사명, 필수), Contact(담당자명, 필수), From(발신계정), 예약시간(YYYY-MM-DD HH:MM:SS)
     * 'TableData' 시트: Email(매핑키), 제품코드, 제품명 (※ '번호'는 수동 입력할 필요 없이 메일 렌더링 시 프로그램이 자동 부여합니다.)
+    (※ Company 또는 Contact 누락 시 메일 작성은 건너뛰고(스킵), 완료 시점에 '[원본파일명]_skipped_[날짜].xlsx' 로 자동 모아 저장됩니다.)
   - MSDS 파일 보관 폴더: 파일명의 맨 첫부분이 "제품코드_" 형태로 시작해야 매칭되어 자동 첨부됩니다.
   - 메일 서명: 실행 경로의 'signature.html' 또는 'signature/signature.html'이 있을 시 메일 맨 하단에 서명이 자동 삽입됩니다. (경로 직접 지정: --signature 경로)
 
