@@ -45,16 +45,16 @@ def main():
         rel_path = os.path.relpath(filepath, project_root)
         ok, error_msg = check_syntax(filepath)
         if ok:
-            print(f"  ✅ PASS: {rel_path}")
+            print(f"  [PASS] {rel_path}")
             passed += 1
         else:
-            print(f"  ❌ FAIL: {rel_path}")
+            print(f"  [FAIL] {rel_path}")
             print(f"         {error_msg}")
             failed += 1
             errors.append((rel_path, error_msg))
     
     print(f"\n{'='*50}")
-    print(f"[결과] 총 {len(py_files)}개 파일 | ✅ {passed} 통과 | ❌ {failed} 실패")
+    print(f"[결과] 총 {len(py_files)}개 파일 | [PASS] {passed} 통과 | [FAIL] {failed} 실패")
     print(f"{'='*50}")
     
     if failed > 0:

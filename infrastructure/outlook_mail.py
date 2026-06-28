@@ -2,9 +2,12 @@ import os
 import win32com.client
 import pythoncom
 from typing import List, Optional
-from core.interfaces import MailService
 
-class OutlookMailService(MailService):
+class OutlookMailService:
+    def __init__(self, force_sender: bool = False, is_interactive: bool = False):
+        self.force_sender = force_sender
+        self.is_interactive = is_interactive
+
     def send_mail(
         self,
         to: str,
@@ -15,8 +18,7 @@ class OutlookMailService(MailService):
         attachments: Optional[List[str]] = None,
         sender: Optional[str] = None,
         draft: bool = False,
-        force_sender: bool = False,
-        is_interactive: bool = False
+        deferred_time: Optional[str] = None
     ) -> bool:
         """아웃룩 COM 인터페이스를 이용해 메일을 전송하거나 초안 창을 띄웁니다."""
         if attachments is None:
@@ -28,11 +30,6 @@ class OutlookMailService(MailService):
             outlook = win32com.client.Dispatch("Outlook.Application")
             namespace = outlook.GetNamespace("MAPI")
             
-            # [안전장치 1] 오프라인 작업 상태 체크 및 경고
-            if namespace.Offline:
-                print("\n[!] 경고: 현재 아웃룩이 오프라인 또는 연결이 끊긴 상태입니다.")
-                print("    메일이 발송되지 않고 아웃룩 [보낼 편지함(Outbox)]에 대기하게 됩니다.\n")
-
             matched_account = None
             primary_email = ""
             accounts = outlook.Session.Accounts
@@ -55,23 +52,12 @@ class OutlookMailService(MailService):
                         "아웃룩 계정 설정을 확인하시거나 올바른 이메일 주소를 입력해 주세요."
                     )
 
-                # [안전장치 3] 기본 송신 계정(Primary)과 불일치할 때 경고 처리
+                # [안전장치 3] 기본 송신 계정(Primary)과 불일치할 때 처리
                 if primary_email and sender_strip.lower() != primary_email.lower():
-                    if is_interactive:
-                        confirm = input(
-                            f"\n[경고] 기본 계정('{primary_email}')이 아닌 '{sender}' 계정으로 메일을 전송합니다.\n"
-                            "계속 진행하시겠습니까? (y/N): "
-                        ).strip().lower()
-                        if confirm not in ["y", "yes"]:
-                            print("사용자 요청으로 메일 발송이 취소되었습니다.")
-                            return False
-                    else:
-                        if not force_sender:
-                            raise PermissionError(
-                                f"기본 송신 계정('{primary_email}')이 아닌 '{sender}' 계정으로 메일 발송이 시도되었습니다.\n"
-                                "오발송 방지를 위해 자동화 모드에서는 발송이 차단됩니다.\n"
-                                "이 계정으로의 발송을 원하신다면 명령줄에 '--force-sender' 플래그를 추가해 주십시오."
-                            )
+                    if not self.force_sender:
+                        raise ValueError(
+                            f"기본 송신 계정('{primary_email}')이 아닌 '{sender}' 계정으로 메일 발송이 시도되었습니다."
+                        )
 
             # 4. 메일 생성 및 속성 주입
             # 0 = olMailItem
@@ -85,7 +71,7 @@ class OutlookMailService(MailService):
 
             # 본문 형식 (HTML 여부 판별)
             body_lower = body.lower()
-            if any(tag in body_lower for tag in ["<html>", "<body>", "<div", "<p>", "<br"]):
+            if any(tag in body_lower for tag in ["<html>", "<body>", "<div", "<p>", "<br", "<table", "<tr", "<td"]):
                 mail.HTMLBody = body
             else:
                 mail.Body = body
@@ -94,20 +80,27 @@ class OutlookMailService(MailService):
             if matched_account:
                 mail.SendUsingAccount = matched_account
 
-            # 첨부파일 연동
-            for path in attachments:
-                if not path.strip():
-                    continue
-                clean_path = path.strip().strip('"').strip("'")
-                abs_path = os.path.abspath(clean_path)
-                if os.path.exists(abs_path):
-                    mail.Attachments.Add(abs_path)
+            # 예약 발송 설정 (Deferred Delivery)
+            if deferred_time:
+                if isinstance(deferred_time, str):
+                    if deferred_time.strip():
+                        mail.DeferredDeliveryTime = deferred_time.strip()
                 else:
-                    raise FileNotFoundError(f"첨부할 파일을 찾을 수 없습니다: {abs_path}")
+                    mail.DeferredDeliveryTime = deferred_time
+
+            # 첨부파일 연동
+            # ponytail: core/distribution.py에서 이미 절대경로 및 파일 존재 검증이 처리되어 넘겨지므로 이중 검증 생략
+            for path in attachments:
+                if path and path.strip():
+                    mail.Attachments.Add(path.strip())
 
             # 5. 발송 실행
             if draft:
-                mail.Display()
+                if self.is_interactive:
+                    mail.Display()
+                else:
+                    # 비대화형 모드(대량 발송 등)에서는 대화상자 포커스 에러 방지를 위해 초안 보관함(Drafts)에 저장만 수행
+                    mail.Save()
             else:
                 mail.Send()
             return True

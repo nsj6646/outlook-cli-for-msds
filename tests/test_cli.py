@@ -53,13 +53,13 @@ class TestResult:
     def record(self, name, success, message="", skipped=False):
         if skipped:
             self.skipped += 1
-            status = "⏭️ SKIP"
+            status = "[SKIP]"
         elif success:
             self.passed += 1
-            status = "✅ PASS"
+            status = "[PASS]"
         else:
             self.failed += 1
-            status = "❌ FAIL"
+            status = "[FAIL]"
         
         line = f"  {status}: {name}"
         if message:
@@ -175,7 +175,7 @@ def main():
     # ──────────────────────────────────────
     total = results.passed + results.failed + results.skipped
     print(f"\n{'='*50}")
-    print(f"[결과] 총 {total}개 테스트 | ✅ {results.passed} 통과 | ❌ {results.failed} 실패 | ⏭️ {results.skipped} 스킵")
+    print(f"[결과] 총 {total}개 테스트 | [PASS] {results.passed} 통과 | [FAIL] {results.failed} 실패 | [SKIP] {results.skipped} 스킵")
     print(f"{'='*50}")
     
     if results.failed > 0:
