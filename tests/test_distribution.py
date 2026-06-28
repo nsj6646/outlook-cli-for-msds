@@ -182,6 +182,27 @@ class TestMailDistributionContext(unittest.TestCase):
             context.close()
             os.chdir(old_cwd)
 
+    def test_mail_bcc_parsing_and_mapping(self):
+        """엑셀 Recipients 시트에 Bcc 컬럼이 존재할 때 MailJob.bcc 에 올바르게 주입되는지 검증."""
+        os.makedirs(self.test_dir, exist_ok=True)
+        excel_path = os.path.join(self.test_dir, "temp_bcc_rec.xlsx")
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws_rec = wb.active
+        ws_rec.title = "Recipients"
+        ws_rec.append(["To", "Cc", "Bcc", "Subject", "Body"])
+        ws_rec.append(["target@example.com", "cc@example.com", "bcc1@example.com;bcc2@example.com", "Bcc Test", "Body content"])
+        wb.save(excel_path)
+        wb.close()
+        
+        context = MailDistributionContext(excel_path, msds_dir=self.test_dir)
+        try:
+            jobs = context.load_jobs()
+            self.assertEqual(len(jobs), 1)
+            self.assertEqual(jobs[0].bcc_addr, "bcc1@example.com;bcc2@example.com")
+        finally:
+            context.close()
+
 
 if __name__ == "__main__":
     unittest.main()
