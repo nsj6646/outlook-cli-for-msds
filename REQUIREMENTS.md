@@ -22,6 +22,7 @@
   - **제목**: `[Sun Chemical Korea] 물질안정정보자료 개정에 따른 제공건 - "고객사 명"`
   - **수신 (To)**: `"고객사 명"`, `"담당자명"` 귀하
   - **참조 (Cc)**: 엑셀 `Recipients` 시트의 `Cc` 컬럼에 기재된 수신처 주소들을 바인딩합니다. 여러 명일 경우 세미콜론 `;` 구분자를 지원하여 아웃룩 참조 필드에 다중 등록합니다.
+  - **비밀참조 (Bcc)**: 엑셀 `Recipients` 시트의 `Bcc` 컬럼에 기재된 수신처 주소들을 바인딩합니다. 참조와 마찬가지로 세미콜론 `;` 구분자를 지원하여 수신자나 다른 참조자에게 노출되지 않도록 아웃룩 비밀참조 필드에 다중 등록합니다. (비밀참조 데이터가 비어 있거나 생략된 행의 경우 에러 없이 서명/본문 조립만 완성하여 발송 대기열로 넘깁니다.)
   - **기본 글꼴 서식 강제화**:
     - 메일 전체 본문과 표 글꼴에 맑은 고딕(`맑은 고딕`, `Malgun Gothic`, sans-serif) 11.0pt 크기를 강제 적용하여 시각적 일질감을 완전히 해소합니다.
   - **본문 내용**: 
@@ -51,6 +52,6 @@
 
 ## 3. 비기능 요구사항
 - **데이터 소스 연동**: 
-  - `Recipients` 시트(To, Cc, Subject, Body, From, 예약시간 컬럼)와 제품군이 매핑된 `TableData` 시트(Email, 제품코드, 제품명 컬럼)의 2개 시트로 구성된 단일 엑셀 파일([test_recipients_v4.xlsx](file:///C:/Users/seungjoo.na/Documents/antigravity/clever-darwin/test_recipients_v4.xlsx))을 데이터베이스로 활용합니다. (엑셀 상에 기존 "번호" 컬럼이 잔존해 있더라도 프로그램은 이를 파싱 시 완전 무시합니다.)
+  - `Recipients` 시트(To, Cc, Bcc, Subject, Body, From, 예약시간 컬럼)와 제품군이 매핑된 `TableData` 시트(Email, 제품코드, 제품명 컬럼)의 2개 시트로 구성된 단일 엑셀 파일([test_recipients_v4.xlsx](file:///C:/Users/seungjoo.na/Documents/antigravity/clever-darwin/test_recipients_v4.xlsx))을 데이터베이스로 활용합니다. (엑셀 상에 기존 "번호" 컬럼이 잔존해 있더라도 프로그램은 이를 파싱 시 완전 무시합니다.)
 - **백그라운드 초안 일괄 저장**:
   - 대량 메일 구동 시 아웃룩 이메일 창이 개별 팝업되어 화면을 방해하지 않도록, `mail.Save()` API를 활용하여 아웃룩 **임시 보관함(Drafts)**에 조용히 백그라운드로 저장합니다.
