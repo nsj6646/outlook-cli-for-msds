@@ -64,9 +64,13 @@ class TestMailDistributionContext(unittest.TestCase):
         
         html = renderer.render(rows)
         self.assertIn("<table", html)
+        self.assertIn("번호", html)
         self.assertIn("P1001", html)
         self.assertIn("P1002", html)
         self.assertIn("solid windowtext 1.0pt", html)
+        # 1과 2 번호가 표의 td에 정상 삽입되었는지 검증
+        self.assertIn(">1</td>", html)
+        self.assertIn(">2</td>", html)
 
     def test_template_engine(self):
         """TemplateEngine이 대소문자 무관하게 플레이스홀더 치환을 완료하는지 검증."""
@@ -112,6 +116,34 @@ class TestMailDistributionContext(unittest.TestCase):
             attachments = jobs[0].attachments
             self.assertTrue(any("P1003_MSDS.pdf" in path for path in attachments))
             self.assertFalse(any("P1003000000123.pdf" in path for path in attachments))
+        finally:
+            context.close()
+
+    def test_mail_signature_injection(self):
+        """기본 signature.html 또는 커스텀 서명 파일이 존재할 때 본문 최하단에 서명이 자동 결합되는지 검증."""
+        os.makedirs(self.test_dir, exist_ok=True)
+        sig_file = os.path.join(self.test_dir, "custom_sig.html")
+        with open(sig_file, "w", encoding="utf-8") as f:
+            f.write("<div class='sig'>Best Regards, Sun Chemical.</div>")
+            
+        excel_path = os.path.join(self.test_dir, "temp_sig_rec.xlsx")
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws_rec = wb.active
+        ws_rec.title = "Recipients"
+        ws_rec.append(["To", "Subject", "Body"])
+        ws_rec.append(["sig_test@example.com", "Hello Subject", "Here is main body."])
+        wb.save(excel_path)
+        wb.close()
+        
+        # signature_path 주입하여 생성
+        context = MailDistributionContext(excel_path, msds_dir=self.test_dir, signature_path=sig_file)
+        try:
+            jobs = context.load_jobs()
+            self.assertEqual(len(jobs), 1)
+            # 본문에 서명 내용이 정상 병합되어 랩핑되었는지 검사
+            self.assertIn("Here is main body.", jobs[0].body)
+            self.assertIn("Best Regards, Sun Chemical.", jobs[0].body)
         finally:
             context.close()
 

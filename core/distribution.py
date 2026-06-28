@@ -67,7 +67,8 @@ class ExcelParser:
                 if email_col_idx is None:
                     raise ValueError("'TableData' 시트에 필수 'Email' 컬럼이 누락되었습니다.")
                     
-                self.table_headers = [str(h).strip() for idx, h in enumerate(raw_headers, 1) if idx != email_col_idx and h]
+                # ponytail: '번호' 컬럼은 파서 레벨에서 수집하지 않고 완전히 무시함
+                self.table_headers = [str(h).strip() for idx, h in enumerate(raw_headers, 1) if idx != email_col_idx and h and str(h).strip().lower() != "번호"]
                 
                 for r_idx in range(2, ws_tabledata.max_row + 1):
                     email_val = ws_tabledata.cell(row=r_idx, column=email_col_idx).value
@@ -79,7 +80,10 @@ class ExcelParser:
                     for idx, h in enumerate(raw_headers, 1):
                         if idx == email_col_idx or not h:
                             continue
-                        row_data[str(h).strip()] = ws_tabledata.cell(row=r_idx, column=idx).value
+                        h_clean = str(h).strip()
+                        if h_clean.lower() == "번호":
+                            continue
+                        row_data[h_clean] = ws_tabledata.cell(row=r_idx, column=idx).value
                         
                     if email_key not in self.table_groups:
                         self.table_groups[email_key] = []
@@ -194,7 +198,11 @@ class ExcelParser:
 class HtmlTableRenderer:
     """특정 이메일에 귀속된 표 데이터를 바탕으로 인라인 CSS가 가미된 미려한 HTML 표 문자열을 빌드하는 책임."""
     def __init__(self, table_headers: list):
-        self.table_headers = table_headers
+        # ponytail: 주입된 헤더가 있을 때만 맨 앞에 "번호" 열을 강제 추가
+        if table_headers:
+            self.table_headers = ["번호"] + [h for h in table_headers if h != "번호"]
+        else:
+            self.table_headers = []
         self.table_style = "border-collapse: collapse; border: none; font-family: '맑은 고딕', 'Malgun Gothic', sans-serif; font-size: 11.0pt; margin: 15px 0;"
         self.th_style = "border: solid windowtext 1.0pt; padding: 0cm 5.4pt 0cm 5.4pt; font-weight: bold; text-align: left; color: #000000; background-color: transparent;"
         self.td_style = "border: solid windowtext 1.0pt; padding: 0cm 5.4pt 0cm 5.4pt; color: #000000;"
@@ -208,11 +216,14 @@ class HtmlTableRenderer:
             html_table += f'  <th style="{self.th_style}">{th}</th>\n'
         html_table += '</tr>\n</thead>\n<tbody>\n'
         
-        for row in rows:
+        for r_idx, row in enumerate(rows, 1):
             html_table += '<tr>\n'
             for th in self.table_headers:
-                val = row.get(th, "")
-                val_str = str(val) if val is not None else ""
+                if th == "번호":
+                    val_str = str(r_idx)
+                else:
+                    val = row.get(th, "")
+                    val_str = str(val) if val is not None else ""
                 html_table += f'  <td style="{self.td_style}">{val_str}</td>\n'
             html_table += '</tr>\n'
         html_table += '</tbody>\n</table>'
@@ -238,10 +249,12 @@ class TemplateEngine:
 
 class MailDistributionContext:
     """엑셀 파일과 MSDS 폴더를 읽어 동적 메일 배포 정보를 구성하고 자가 청소 로그를 관리하는 단일 Deep Module."""
-    def __init__(self, excel_path: str, msds_dir: Optional[str] = None, default_sender: Optional[str] = None):
+    def __init__(self, excel_path: str, msds_dir: Optional[str] = None, default_sender: Optional[str] = None, signature_path: Optional[str] = None):
         self.excel_path = excel_path
         self.msds_dir = msds_dir
         self.default_sender = default_sender
+        self.signature_path = signature_path
+        self.signature_html = ""
         self.logger = logging.getLogger("MailDistributionContext")
         self.logger.setLevel(logging.INFO)
         
@@ -249,6 +262,25 @@ class MailDistributionContext:
         if not self.logger.handlers:
             self._init_logger()
             
+        self._load_signature()
+            
+    def _load_signature(self):
+        # ponytail: 서명 파일 경로 탐색 (미지정 시 현재 폴더의 signature.html이 디폴트)
+        sig_path = self.signature_path
+        if not sig_path:
+            sig_path = "signature.html"
+            
+        if os.path.exists(sig_path):
+            try:
+                with open(sig_path, "r", encoding="utf-8") as f:
+                    self.signature_html = f.read().strip()
+                self.logger.info(f"메일 서명을 성공적으로 로드했습니다: {os.path.abspath(sig_path)}")
+            except Exception as e:
+                self.logger.warning(f"메일 서명 파일({sig_path}) 로드 중 에러 발생: {str(e)}")
+        else:
+            if self.signature_path:
+                self.logger.warning(f"지정된 서명 파일이 존재하지 않습니다: {self.signature_path}")
+
     def _init_logger(self):
         log_dir = "logs"
         if not os.path.exists(log_dir):
@@ -388,6 +420,10 @@ class MailDistributionContext:
                     final_body += "<br><br>" + html_table
             else:
                 final_body = html_table if html_table else "본문 내용이 없습니다."
+                
+            # ponytail: 서명 파일 내용이 로드되어 있다면 최종 본문 하단에 병합
+            if self.signature_html:
+                final_body += "<br><br>" + self.signature_html
 
             # 3. 맑은 고딕 11pt 통합 폰트 및 스타일 랩핑
             font_wrapped_body = f'<div style="font-family: \'맑은 고딕\', \'Malgun Gothic\', sans-serif; font-size: 11.0pt; color: #000000; line-height: 1.6;">{final_body}</div>'

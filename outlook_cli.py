@@ -9,10 +9,10 @@ from core.distribution import MailDistributionContext
 
 CONFIG_FILENAME = "outlook_config.json"
 
-def send_bulk_mails_from_excel(excel_path: str, sender_email: Optional[str], force_sender: bool, draft: bool, msds_dir: Optional[str] = None):
+def send_bulk_mails_from_excel(excel_path: str, sender_email: Optional[str], force_sender: bool, draft: bool, msds_dir: Optional[str] = None, signature_path: Optional[str] = None):
     """MailDistributionContext 모듈을 통해 조립된 jobs를 로드하여 아웃룩으로 순차 발송합니다."""
     try:
-        dist_context = MailDistributionContext(excel_path, msds_dir, sender_email)
+        dist_context = MailDistributionContext(excel_path, msds_dir, sender_email, signature_path)
         jobs = dist_context.load_jobs()
     except Exception as e:
         raise ValueError(f"배포 대상 로딩에 실패했습니다: {str(e)}")
@@ -203,6 +203,7 @@ def main():
     parser.add_argument("-i", "--interactive", action="store_true", help="명령줄 인자가 있더라도 강제로 대화형 모드 진입")
     parser.add_argument("-e", "--excel", help="엑셀 파일 경로 (.xlsx) 지정 시 대량 메일 발송 모드로 작동합니다.")
     parser.add_argument("--msds-dir", help="MSDS 파일들이 모여있는 폴더 경로 (지정하지 않으면 현재 폴더)")
+    parser.add_argument("--signature", help="메일 본문 하단에 자동 삽입할 HTML 서명 파일 경로 (미지정 시 현재 폴더의 signature.html 자동 탐색)")
     
     args = parser.parse_args()
     
@@ -214,7 +215,8 @@ def main():
                 sender_email=sender_email if sender_email else None,
                 force_sender=args.force_sender,
                 draft=args.draft,
-                msds_dir=args.msds_dir
+                msds_dir=args.msds_dir,
+                signature_path=args.signature
             )
         except Exception as ex:
             print(f"\n[오류] 엑셀 대량 발송 중 실패가 발생했습니다: {str(ex)}")
