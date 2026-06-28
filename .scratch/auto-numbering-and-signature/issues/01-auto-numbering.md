@@ -1,6 +1,6 @@
 # 이슈 01: 표 번호 자동 매김 (Auto Row Numbering)
 
-Status: ready-for-agent
+Status: resolved
 
 ## What to build
 

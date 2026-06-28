@@ -1,6 +1,6 @@
 # 이슈 02: 메일 서명 자동 삽입 (Mail Signature)
 
-Status: ready-for-agent
+Status: resolved
 
 ## What to build
 

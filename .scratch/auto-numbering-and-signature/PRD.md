@@ -1,6 +1,6 @@
 # PRD: 표 번호 자동 매김 및 메일 서명 자동 삽입
 
-Status: ready-for-agent
+Status: resolved
 
 ## Problem Statement
 
