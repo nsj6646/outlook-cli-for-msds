@@ -11,51 +11,55 @@ CONFIG_FILENAME = "outlook_config.json"
 
 def send_bulk_mails_from_excel(excel_path: str, sender_email: Optional[str], force_sender: bool, draft: bool, msds_dir: Optional[str] = None, signature_path: Optional[str] = None):
     """MailDistributionContext 모듈을 통해 조립된 jobs를 로드하여 아웃룩으로 순차 발송합니다."""
+    dist_context = None
     try:
         dist_context = MailDistributionContext(excel_path, msds_dir, sender_email, signature_path)
         jobs = dist_context.load_jobs()
+        
+        mail_service = OutlookMailService(force_sender=force_sender, is_interactive=False)
+        
+        success_count = 0
+        failure_count = 0
+        
+        print(f"\n[대량 메일 발송 시작] 총 {len(jobs)}건의 발송 대기열 처리를 시작합니다.")
+        
+        for idx, job in enumerate(jobs, 1):
+            print(f"[{idx}/{len(jobs)}] '{job.to_addr}' 대상 메일 초안 작성 시도 중...")
+            try:
+                success = mail_service.send_mail(
+                    to=job.to_addr,
+                    subject=job.subject,
+                    body=job.body,
+                    cc=job.cc_addr,
+                    bcc=job.bcc_addr,
+                    attachments=job.attachments,
+                    sender=job.from_addr,
+                    draft=draft,
+                    deferred_time=job.deferred_time
+                )
+                if success:
+                    success_count += 1
+                    mode_str = "초안 보관함 저장" if draft else "즉시 발송"
+                    print(f"   -> [성공] {mode_str} 완료")
+                else:
+                    failure_count += 1
+                    print("   -> [실패] 발송 작업이 중단되었습니다.")
+            except Exception as ex:
+                failure_count += 1
+                print(f"   -> [에러] 발송 실패: {str(ex)}")
+                
+        print("\n==============================================")
+        print("               대량 발송 결과 요약")
+        print("==============================================")
+        print(f"성공 건수: {success_count}건")
+        print(f"실패 건수: {failure_count}건")
+        print(f"총 처리 건수: {success_count + failure_count}건")
+        print("==============================================")
     except Exception as e:
         raise ValueError(f"배포 대상 로딩에 실패했습니다: {str(e)}")
-
-    mail_service = OutlookMailService(force_sender=force_sender, is_interactive=False)
-    
-    success_count = 0
-    failure_count = 0
-    
-    print(f"\n[대량 메일 발송 시작] 총 {len(jobs)}건의 발송 대기열 처리를 시작합니다.")
-    
-    for idx, job in enumerate(jobs, 1):
-        print(f"[{idx}/{len(jobs)}] '{job.to_addr}' 대상 메일 초안 작성 시도 중...")
-        try:
-            success = mail_service.send_mail(
-                to=job.to_addr,
-                subject=job.subject,
-                body=job.body,
-                cc=job.cc_addr,
-                bcc=job.bcc_addr,
-                attachments=job.attachments,
-                sender=job.from_addr,
-                draft=draft,
-                deferred_time=job.deferred_time
-            )
-            if success:
-                success_count += 1
-                mode_str = "초안 보관함 저장" if draft else "즉시 발송"
-                print(f"   -> [성공] {mode_str} 완료")
-            else:
-                failure_count += 1
-                print("   -> [실패] 발송 작업이 중단되었습니다.")
-        except Exception as ex:
-            failure_count += 1
-            print(f"   -> [에러] 발송 실패: {str(ex)}")
-            
-    print("\n==============================================")
-    print("               대량 발송 결과 요약")
-    print("==============================================")
-    print(f"성공 건수: {success_count}건")
-    print(f"실패 건수: {failure_count}건")
-    print(f"총 처리 건수: {success_count + failure_count}건")
-    print("==============================================")
+    finally:
+        if dist_context:
+            dist_context.close()
 
 
 def load_config():
