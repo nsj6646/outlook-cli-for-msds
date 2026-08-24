@@ -18,10 +18,137 @@ class MailJob:
     deferred_time: Optional[str] = None
 
 
+class TableDataSheetParser:
+    """TableData 시트 전용 — Email 필수, '번호' 무시 규칙 단일 소유. ponytail: 번호 컬럼 무시."""
+    def __init__(self, ws):
+        self.ws = ws
+        self.headers: list = []
+        self.groups: dict = {}
+        self._parse()
+
+    def _parse(self):
+        raw_headers = [cell.value for cell in self.ws[1]]
+        email_col_idx = None
+        for idx, h in enumerate(raw_headers, 1):
+            if h and str(h).strip().lower() == "email":
+                email_col_idx = idx
+                break
+        if email_col_idx is None:
+            raise ValueError("'TableData' 시트에 필수 'Email' 컬럼이 누락되었습니다.")
+        # ponytail: '번호' 컬럼은 TableData 파서에서만 무시 — Recipients 파서는 모름
+        self.headers = [str(h).strip() for idx, h in enumerate(raw_headers, 1) if idx != email_col_idx and h and str(h).strip().lower() != "번호"]
+        for r_idx in range(2, self.ws.max_row + 1):
+            email_val = self.ws.cell(row=r_idx, column=email_col_idx).value
+            if not email_val:
+                continue
+            email_key = str(email_val).strip().lower()
+            row_data = {}
+            for idx, h in enumerate(raw_headers, 1):
+                if idx == email_col_idx or not h:
+                    continue
+                h_clean = str(h).strip()
+                if h_clean.lower() == "번호":
+                    continue
+                row_data[h_clean] = self.ws.cell(row=r_idx, column=idx).value
+            if email_key not in self.groups:
+                self.groups[email_key] = []
+            self.groups[email_key].append(row_data)
+
+
+class RecipientsSheetParser:
+    """Recipients 시트 전용 — To 필수, Cc/Bcc/Subject/From/예약시간 매핑 소유."""
+    def __init__(self, ws):
+        self.ws = ws
+        self.headers: list = []
+        self.recipients: list = []
+        self._parse()
+
+    def _parse(self):
+        self.headers = [cell.value for cell in self.ws[1]]
+        rec_mapping = {}
+        for idx, cell_value in enumerate(self.headers, 1):
+            if cell_value:
+                h_name = str(cell_value).strip().lower()
+                rec_mapping[h_name] = idx
+        if "to" not in rec_mapping:
+            raise ValueError("'Recipients' 시트에 필수 'To' 컬럼이 누락되었습니다.")
+        max_row = self.ws.max_row
+        for row_idx in range(2, max_row + 1):
+            to_col = rec_mapping["to"]
+            to_value = self.ws.cell(row=row_idx, column=to_col).value
+            if not to_value:
+                continue
+            to_addr = str(to_value).strip()
+            cc_addr = ""
+            if "cc" in rec_mapping:
+                val = self.ws.cell(row=row_idx, column=rec_mapping["cc"]).value
+                cc_addr = str(val).strip() if val else ""
+            bcc_addr = ""
+            if "bcc" in rec_mapping:
+                val = self.ws.cell(row=row_idx, column=rec_mapping["bcc"]).value
+                bcc_addr = str(val).strip() if val else ""
+            subject = ""
+            if "subject" in rec_mapping:
+                val = self.ws.cell(row=row_idx, column=rec_mapping["subject"]).value
+                subject = str(val).strip() if val else ""
+            attachments = []
+            if "attachments" in rec_mapping:
+                val = self.ws.cell(row=row_idx, column=rec_mapping["attachments"]).value
+                if val:
+                    paths = str(val).split(";")
+                    for p in paths:
+                        p_clean = p.strip().strip('"').strip("'")
+                        if p_clean:
+                            attachments.append(os.path.abspath(p_clean))
+            body_val = ""
+            if "body" in rec_mapping:
+                val = self.ws.cell(row=row_idx, column=rec_mapping["body"]).value
+                body_val = str(val) if val is not None else ""
+            from_addr = ""
+            from_col_idx = rec_mapping.get("from") or rec_mapping.get("sender")
+            if from_col_idx:
+                val = self.ws.cell(row=row_idx, column=from_col_idx).value
+                from_addr = str(val).strip() if val else ""
+            deferred_time_val = None
+            deferred_col_idx = (
+                rec_mapping.get("deferredtime") or
+                rec_mapping.get("deferred_time") or
+                rec_mapping.get("deferred") or
+                rec_mapping.get("예약시간") or
+                rec_mapping.get("예약발송")
+            )
+            if deferred_col_idx:
+                val = self.ws.cell(row=row_idx, column=deferred_col_idx).value
+                if val is not None:
+                    if isinstance(val, str):
+                        deferred_time_val = val.strip()
+                    else:
+                        deferred_time_val = val
+            row_replace_dict = {}
+            for idx, col_name in enumerate(self.headers, 1):
+                if not col_name:
+                    continue
+                val = self.ws.cell(row=row_idx, column=idx).value
+                val_str = str(val) if val is not None else ""
+                row_replace_dict[str(col_name).strip().lower()] = val_str
+            self.recipients.append({
+                "to": to_addr,
+                "cc": cc_addr,
+                "bcc": bcc_addr,
+                "subject": subject,
+                "attachments": attachments,
+                "body": body_val,
+                "from": from_addr,
+                "deferred_time": deferred_time_val,
+                "replace_dict": row_replace_dict
+            })
+
+
 class ExcelParser:
-    """엑셀 파일을 읽고, Recipients 시트와 TableData 시트를 로딩하여 수신자 메타데이터와 표 데이터를 파싱 및 캐싱하는 책임."""
-    def __init__(self, excel_path: str):
+    """엑셀 파일을 읽고, 두 시트 파서를 조합해 수신자·표 데이터를 제공하는 facade."""
+    def __init__(self, excel_path: str, workbook=None):
         self.excel_path = excel_path
+        self._workbook = workbook
         self.recipients_data = []
         self.table_groups = {}
         self.table_headers = []
@@ -30,159 +157,38 @@ class ExcelParser:
         self._parse()
 
     def _parse(self):
-        if not os.path.exists(self.excel_path):
+        # workbook 주입 시 파일 존재 검사 스킵 (테스트 전용 심)
+        if self._workbook is None and not os.path.exists(self.excel_path):
             raise FileNotFoundError(f"지정한 엑셀 파일을 찾을 수 없습니다: {os.path.abspath(self.excel_path)}")
-            
-        wb = None
-        try:
-            wb = openpyxl.load_workbook(self.excel_path, data_only=True)
-        except Exception as e:
-            raise ValueError(f"엑셀 파일을 로드하는 중 오류가 발생했습니다: {str(e)}")
-            
+        wb = self._workbook
+        owned = False
+        if wb is None:
+            try:
+                wb = openpyxl.load_workbook(self.excel_path, data_only=True)
+                owned = True
+            except Exception as e:
+                raise ValueError(f"엑셀 파일을 로드하는 중 오류가 발생했습니다: {str(e)}")
         try:
             recipients_sheet_name = None
             tabledata_sheet_name = None
-            
             for name in wb.sheetnames:
                 if name.lower() == "recipients":
                     recipients_sheet_name = name
                 elif name.lower() == "tabledata":
                     tabledata_sheet_name = name
-                    
             if not recipients_sheet_name:
                 raise ValueError("엑셀 파일에 'Recipients' 시트가 존재하지 않습니다.")
-                
-            ws_recipients = wb[recipients_sheet_name]
-            
-            # TableData 시트가 있으면 표 데이터 캐싱
             if tabledata_sheet_name:
                 ws_tabledata = wb[tabledata_sheet_name]
-                raw_headers = [cell.value for cell in ws_tabledata[1]]
-                
-                email_col_idx = None
-                for idx, h in enumerate(raw_headers, 1):
-                    if h and str(h).strip().lower() == "email":
-                        email_col_idx = idx
-                        break
-                        
-                if email_col_idx is None:
-                    raise ValueError("'TableData' 시트에 필수 'Email' 컬럼이 누락되었습니다.")
-                    
-                # ponytail: '번호' 컬럼은 파서 레벨에서 수집하지 않고 완전히 무시함
-                self.table_headers = [str(h).strip() for idx, h in enumerate(raw_headers, 1) if idx != email_col_idx and h and str(h).strip().lower() != "번호"]
-                
-                for r_idx in range(2, ws_tabledata.max_row + 1):
-                    email_val = ws_tabledata.cell(row=r_idx, column=email_col_idx).value
-                    if not email_val:
-                        continue
-                    email_key = str(email_val).strip().lower()
-                    
-                    row_data = {}
-                    for idx, h in enumerate(raw_headers, 1):
-                        if idx == email_col_idx or not h:
-                            continue
-                        h_clean = str(h).strip()
-                        if h_clean.lower() == "번호":
-                            continue
-                        row_data[h_clean] = ws_tabledata.cell(row=r_idx, column=idx).value
-                        
-                    if email_key not in self.table_groups:
-                        self.table_groups[email_key] = []
-                    self.table_groups[email_key].append(row_data)
-
-            self.rec_headers = [cell.value for cell in ws_recipients[1]]
-            rec_mapping = {}
-            
-            for idx, cell_value in enumerate(self.rec_headers, 1):
-                if cell_value:
-                    h_name = str(cell_value).strip().lower()
-                    rec_mapping[h_name] = idx
-                    
-            if "to" not in rec_mapping:
-                raise ValueError("'Recipients' 시트에 필수 'To' 컬럼이 누락되었습니다.")
-                
-            max_row = ws_recipients.max_row
-            for row_idx in range(2, max_row + 1):
-                to_col = rec_mapping["to"]
-                to_value = ws_recipients.cell(row=row_idx, column=to_col).value
-                if not to_value:
-                    continue
-                    
-                to_addr = str(to_value).strip()
-                
-                cc_addr = ""
-                if "cc" in rec_mapping:
-                    val = ws_recipients.cell(row=row_idx, column=rec_mapping["cc"]).value
-                    cc_addr = str(val).strip() if val else ""
-                    
-                bcc_addr = ""
-                if "bcc" in rec_mapping:
-                    val = ws_recipients.cell(row=row_idx, column=rec_mapping["bcc"]).value
-                    bcc_addr = str(val).strip() if val else ""
-                    
-                subject = ""
-                if "subject" in rec_mapping:
-                    val = ws_recipients.cell(row=row_idx, column=rec_mapping["subject"]).value
-                    subject = str(val).strip() if val else ""
-                    
-                attachments = []
-                if "attachments" in rec_mapping:
-                    val = ws_recipients.cell(row=row_idx, column=rec_mapping["attachments"]).value
-                    if val:
-                        paths = str(val).split(";")
-                        for p in paths:
-                            p_clean = p.strip().strip('"').strip("'")
-                            if p_clean:
-                                attachments.append(os.path.abspath(p_clean))
-                                
-                body_val = ""
-                if "body" in rec_mapping:
-                    val = ws_recipients.cell(row=row_idx, column=rec_mapping["body"]).value
-                    body_val = str(val) if val is not None else ""
-                
-                from_addr = ""
-                from_col_idx = rec_mapping.get("from") or rec_mapping.get("sender")
-                if from_col_idx:
-                    val = ws_recipients.cell(row=row_idx, column=from_col_idx).value
-                    from_addr = str(val).strip() if val else ""
-
-                deferred_time_val = None
-                deferred_col_idx = (
-                    rec_mapping.get("deferredtime") or 
-                    rec_mapping.get("deferred_time") or 
-                    rec_mapping.get("deferred") or 
-                    rec_mapping.get("예약시간") or 
-                    rec_mapping.get("예약발송")
-                )
-                if deferred_col_idx:
-                    val = ws_recipients.cell(row=row_idx, column=deferred_col_idx).value
-                    if val is not None:
-                        if isinstance(val, str):
-                            deferred_time_val = val.strip()
-                        else:
-                            deferred_time_val = val
-                
-                row_replace_dict = {}
-                for idx, col_name in enumerate(self.rec_headers, 1):
-                    if not col_name:
-                        continue
-                    val = ws_recipients.cell(row=row_idx, column=idx).value
-                    val_str = str(val) if val is not None else ""
-                    row_replace_dict[str(col_name).strip().lower()] = val_str
-
-                self.recipients_data.append({
-                    "to": to_addr,
-                    "cc": cc_addr,
-                    "bcc": bcc_addr,
-                    "subject": subject,
-                    "attachments": attachments,
-                    "body": body_val,
-                    "from": from_addr,
-                    "deferred_time": deferred_time_val,
-                    "replace_dict": row_replace_dict
-                })
+                t_parser = TableDataSheetParser(ws_tabledata)
+                self.table_headers = t_parser.headers
+                self.table_groups = t_parser.groups
+            ws_recipients = wb[recipients_sheet_name]
+            r_parser = RecipientsSheetParser(ws_recipients)
+            self.rec_headers = r_parser.headers
+            self.recipients_data = r_parser.recipients
         finally:
-            if wb:
+            if owned and wb:
                 wb.close()
 
     def get_recipients(self):
@@ -297,6 +303,77 @@ class TemplateEngine:
         return self.pattern.sub(replace_match, self.template_content)
 
 
+class MsdsFileMatcher:
+    def __init__(self, search_dir: str, all_files: list):
+        self.search_dir = search_dir
+        self.all_files = all_files
+
+    def collect(self, table_rows: list, base_attachments: list):
+        new_attachments = []
+        missing_code = None
+        for row in table_rows:
+            prod_code = None
+            for k, v in row.items():
+                if k.strip().lower() == "제품코드":
+                    prod_code = str(v).strip()
+                    break
+            if prod_code:
+                matched = False
+                # ponytail: 제품코드_ 접두사 강제 — P1003 vs P10030001 모호성 제거
+                for filename in self.all_files:
+                    if filename.lower().startswith(prod_code.lower() + "_"):
+                        full_path = os.path.abspath(os.path.join(self.search_dir, filename))
+                        if full_path not in base_attachments and full_path not in new_attachments:
+                            new_attachments.append(full_path)
+                        matched = True
+                if not matched:
+                    missing_code = prod_code
+        return new_attachments, missing_code
+
+
+class RecipientValidator:
+    _deferred_pattern = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
+
+    def validate_required(self, rec: dict):
+        company = rec.get("replace_dict", {}).get("company", "").strip()
+        contact = rec.get("replace_dict", {}).get("contact", "").strip()
+        if not company or not contact:
+            return False, (company, contact)
+        return True, (company, contact)
+
+    def validate_deferred(self, deferred_time):
+        if deferred_time and isinstance(deferred_time, str) and deferred_time.strip():
+            if not self._deferred_pattern.match(deferred_time.strip()):
+                return False
+        return True
+
+
+class MailBodyAssembler:
+    def __init__(self, signature_html: str, table_renderer):
+        self.signature_html = signature_html
+        self.table_renderer = table_renderer
+
+    def assemble(self, rec: dict, company: str, contact: str, table_rows: list, table_headers: list):
+        html_table = ""
+        if table_rows and table_headers:
+            html_table = self.table_renderer.render(table_rows)
+        header_line = f"수신: {company} {contact}님<br><br>"
+        final_body = ""
+        if rec["body"]:
+            body_html = rec["body"].replace("\n", "<br>")
+            replace_dict = rec["replace_dict"]
+            replace_dict["table"] = html_table
+            final_body = TemplateEngine(body_html).render(replace_dict)
+            if "{{table}}" not in body_html and html_table:
+                final_body += "<br><br>" + html_table
+        else:
+            final_body = html_table if html_table else "본문 내용이 없습니다."
+        final_body = header_line + final_body
+        if self.signature_html:
+            final_body += "<br><br>" + self.signature_html
+        return f'<div style="font-family: \'맑은 고딕\', \'Malgun Gothic\', sans-serif; font-size: 11.0pt; color: #000000; line-height: 1.6;">{final_body}</div>', html_table
+
+
 class MailDistributionContext:
     """엑셀 파일과 MSDS 폴더를 읽어 동적 메일 배포 정보를 구성하고 자가 청소 로그를 관리하는 단일 Deep Module."""
     def __init__(self, excel_path: str, msds_dir: Optional[str] = None, default_sender: Optional[str] = None, signature_path: Optional[str] = None):
@@ -399,22 +476,16 @@ class MailDistributionContext:
             self.logger.warning(f"감사 로그 파일 자동 정리 과정 중 경고 발생: {str(e)}")
 
     def load_jobs(self) -> List[MailJob]:
-        """엑셀 파싱 및 MSDS 매칭, 본문 표 자동 조립을 수행하여 발송 정보 객체 목록을 로드함."""
         self._cleanup_old_logs()
         self.logger.info(f"엑셀 데이터 로딩을 개시합니다: {self.excel_path}")
-        
         try:
             self.parser = ExcelParser(self.excel_path)
         except Exception as e:
             self.logger.error(f"엑셀 로드에 실패하여 프로그램을 중단합니다: {str(e)}")
             raise
-            
         recipients = self.parser.get_recipients()
         table_headers = self.parser.get_table_headers()
         html_table_renderer = HtmlTableRenderer(table_headers)
-        
-        jobs: List[MailJob] = []
-        
         search_dir = self.msds_dir if self.msds_dir else "."
         all_files = []
         if os.path.exists(search_dir) and os.path.isdir(search_dir):
@@ -424,121 +495,52 @@ class MailDistributionContext:
                 self.logger.warning(f"MSDS 폴더 '{search_dir}'를 스캔하는 과정에서 에러 발생: {str(e)}")
         else:
             self.logger.warning(f"지정된 MSDS 폴더가 존재하지 않거나 디렉토리가 아닙니다: {search_dir}")
-
+        validator = RecipientValidator()
+        matcher = MsdsFileMatcher(search_dir, all_files)
+        assembler = MailBodyAssembler(self.signature_html, html_table_renderer)
+        jobs: List[MailJob] = []
         self.logger.info(f"총 {len(recipients)}명의 메일 명세 분석을 시작합니다.")
-        
         for idx, rec in enumerate(recipients, 1):
             to_addr = rec["to"]
-            cc_addr = rec["cc"]
-            bcc_addr = rec["bcc"]
-            attachments = rec["attachments"][:]
-            
             self.logger.info(f"[{idx}/{len(recipients)}] 수신자 '{to_addr}' 분석 중...")
-            
-            # ponytail: Company 및 Contact 필수 항목 유효성 체크
-            company = rec.get("replace_dict", {}).get("company", "").strip()
-            contact = rec.get("replace_dict", {}).get("contact", "").strip()
-            if not company or not contact:
+            ok, (company, contact) = validator.validate_required(rec)
+            if not ok:
                 self.logger.error(f"   -> [오류/건너뜀] 수신처 '{to_addr}'의 고객사명(Company) 또는 담당자명(Contact) 정보가 누락되었습니다. 이 수신자는 스킵합니다.")
                 self.parser.skipped_recipients.append(rec)
                 continue
-                
-            # 메일 제목 양식 변경: Subject + " - " + Company
             subject = rec["subject"] + " - " + company
-            
-            # 1. 취급 제품 테이블 빌드 및 MSDS 접두사 매칭 스캔
-            html_table = ""
             table_rows = self.parser.get_table_data(to_addr)
-            if table_rows and table_headers:
-                html_table = html_table_renderer.render(table_rows)
-
-            msds_missing = False
-            missing_prod_code = ""
-            
-            # 제품코드 접두사 자동 수집
-            for row in table_rows:
-                prod_code = None
-                for k, v in row.items():
-                    if k.strip().lower() == "제품코드":
-                        prod_code = str(v).strip()
-                        break
-                
-                if prod_code:
-                    matched_in_dir = False
-                    # ponytail: 제품코드 간의 모호성을 제거하기 위해 무조건 '제품코드_' 접두사 패턴으로 매칭
-                    for filename in all_files:
-                        if filename.lower().startswith(prod_code.lower() + "_"):
-                            full_path = os.path.abspath(os.path.join(search_dir, filename))
-                            if full_path not in attachments:
-                                attachments.append(full_path)
-                                self.logger.info(f"   -> [자동 첨부] 제품코드 '{prod_code}' 매칭 파일: {filename}")
-                            matched_in_dir = True
-                    
-                    if not matched_in_dir:
-                        msds_missing = True
-                        missing_prod_code = prod_code
-
-            # 개별 검증 1: MSDS 첨부파일 실종 시 스킵 정책
-            if msds_missing:
-                self.logger.error(f"   -> [오류/건너뜀] 제품코드 '{missing_prod_code}'에 해당하는 MSDS 서류가 폴더 내에 실종되었습니다. 이 수신자는 스킵합니다.")
+            base_attachments = rec["attachments"][:]
+            new_attachments, missing_code = matcher.collect(table_rows, base_attachments)
+            if missing_code:
+                self.logger.error(f"   -> [오류/건너뜀] 제품코드 '{missing_code}'에 해당하는 MSDS 서류가 폴더 내에 실종되었습니다. 이 수신자는 스킵합니다.")
                 self.parser.skipped_recipients.append(rec)
                 continue
-
-            # 2. 본문 치환 엔진 가동 및 표 병합
-            header_line = f"수신: {company} {contact}님<br><br>"
-            final_body = ""
-            if rec["body"]:
-                body_html = rec["body"].replace("\n", "<br>")
-                replace_dict = rec["replace_dict"]
-                replace_dict["table"] = html_table
-                
-                temp_engine = TemplateEngine(body_html)
-                final_body = temp_engine.render(replace_dict)
-                
-                if "{{table}}" not in body_html and html_table:
-                    final_body += "<br><br>" + html_table
-            else:
-                final_body = html_table if html_table else "본문 내용이 없습니다."
-                
-            # 최상단에 수신인 머리글 강제 이식
-            final_body = header_line + final_body
-                
-            # ponytail: 서명 파일 내용이 로드되어 있다면 최종 본문 하단에 병합
-            if self.signature_html:
-                final_body += "<br><br>" + self.signature_html
-
-            # 3. 맑은 고딕 11pt 통합 폰트 및 스타일 랩핑
-            font_wrapped_body = f'<div style="font-family: \'맑은 고딕\', \'Malgun Gothic\', sans-serif; font-size: 11.0pt; color: #000000; line-height: 1.6;">{final_body}</div>'
-
-            # 개별 검증 2: 예약 일시 유효성 검사 (포맷 검증)
+            attachments = base_attachments + new_attachments
+            for p in new_attachments:
+                fname = os.path.basename(p)
+                prod = next((str(v).strip() for row in table_rows for k, v in row.items() if k.strip().lower() == "제품코드" and os.path.basename(p).lower().startswith(str(v).strip().lower() + "_")), "")
+                self.logger.info(f"   -> [자동 첨부] 제품코드 '{prod}' 매칭 파일: {fname}")
             deferred_time = rec.get("deferred_time")
-            if deferred_time:
-                # 문자열 타입의 일시면 정규식 검증 시도
-                if isinstance(deferred_time, str) and deferred_time.strip():
-                    deferred_time = deferred_time.strip()
-                    # YYYY-MM-DD HH:MM:SS 규격 검증
-                    pattern = r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"
-                    if not re.match(pattern, deferred_time):
-                        self.logger.error(f"   -> [오류/건너뜀] 예약 발송 시간 '{deferred_time}'의 날짜 포맷이 올바르지 않습니다 (YYYY-MM-DD HH:MM:SS 규격 필요). 이 수신자는 스킵합니다.")
-                        self.parser.skipped_recipients.append(rec)
-                        continue
-            
-            # 발신인 계정 결정
+            if deferred_time and isinstance(deferred_time, str) and deferred_time.strip():
+                deferred_time = deferred_time.strip()
+            if not validator.validate_deferred(deferred_time):
+                self.logger.error(f"   -> [오류/건너뜀] 예약 발송 시간 '{deferred_time}'의 날짜 포맷이 올바르지 않습니다 (YYYY-MM-DD HH:MM:SS 규격 필요). 이 수신자는 스킵합니다.")
+                self.parser.skipped_recipients.append(rec)
+                continue
+            font_wrapped_body, _ = assembler.assemble(rec, company, contact, table_rows, table_headers)
             from_addr = rec.get("from") if rec.get("from") else self.default_sender
-            
-            # 정상 로드된 메일 작업 추가
             jobs.append(MailJob(
                 to_addr=to_addr,
                 subject=subject,
                 body=font_wrapped_body,
-                cc_addr=cc_addr if cc_addr else None,
-                bcc_addr=bcc_addr if bcc_addr else None,
+                cc_addr=rec["cc"] if rec["cc"] else None,
+                bcc_addr=rec["bcc"] if rec["bcc"] else None,
                 attachments=attachments,
                 from_addr=from_addr if from_addr else None,
                 deferred_time=deferred_time
             ))
             self.logger.info("   -> [분석 완료] 발송 대기열 추가 성공")
-
         self.logger.info(f"분석 요약: 전체 {len(recipients)}건 중 {len(jobs)}건 변환 성공 (실패/스킵: {len(recipients) - len(jobs)}건)")
         return jobs
 
